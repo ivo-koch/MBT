@@ -1,4 +1,4 @@
-package mbt.modelo.caminos;
+package util;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,9 +8,24 @@ public class Grafo {
 	// Cantidad de aristas
 	private int n;
 
+	private double[][] pesosAristas;
+
+	private double[] pesosVertices;
+
 	public Grafo(int n) {
 		this.n = n;
 		this.aristas = new boolean[n][n];
+		this.pesosAristas = new double[n][n];
+		this.pesosVertices = new double[n];
+	}
+
+	public int gradoMaximo() {
+
+		int maxGrado = 0;
+		for (int i = 0; i < this.getVertices(); ++i)
+			maxGrado = Math.max(maxGrado, this.getVecinos(i).size());
+
+		return maxGrado;
 	}
 
 	// Aristas
@@ -28,17 +43,18 @@ public class Grafo {
 	}
 
 	public Grafo aumentar(int vertices) {
-		
+
 		Grafo g = new Grafo(this.getVertices() + vertices);
-		
+
 		for (int i = 0; i < this.getVertices(); ++i)
 			for (int j = i + 1; j < this.getVertices(); ++j)
 				if (this.isArista(i, j))
 					g.setArista(i, j);
-		
+
 		return g;
-				
+
 	}
+
 	public int getAristas() {
 
 		int aristas = 0;
@@ -48,6 +64,31 @@ public class Grafo {
 					aristas++;
 
 		return aristas;
+	}
+
+	public double getPeso(int i, int j) {
+		checkArista(i, j);
+		return pesosAristas[i][j];
+	}
+
+	private void checkArista(int i, int j) {
+		if (!isArista(i, j))
+			throw new IllegalArgumentException("(" + i + ", " + j + ") no es arista, pa.");
+	}
+
+	public void setPeso(int i, int j, double peso) {
+		checkArista(i, j);
+
+		this.pesosAristas[i][j] = peso;
+		this.pesosAristas[j][i] = peso;
+	}
+
+	public void setPeso(int i, double peso) {
+		this.pesosVertices[i] = peso;
+	}
+
+	public double getPeso(int i) {
+		return this.pesosVertices[i];
 	}
 
 	public boolean isArista(int i, int j) {

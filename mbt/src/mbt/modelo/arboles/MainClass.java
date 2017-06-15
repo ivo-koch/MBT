@@ -1,4 +1,4 @@
-package mbt.modelo.caminos;
+package mbt.modelo.arboles;
 
 
 import java.io.ByteArrayOutputStream;
@@ -12,23 +12,24 @@ public class MainClass {
 
 	public static void main(String[] args) throws Exception {
 
-		Grafo g = new Grafo(7);
+		Grafo g = new Grafo(8);
 				
+		g.setArista(0, 1);
 		g.setArista(0, 2);
-		g.setArista(1, 3);
-		g.setArista(2, 3);
-		g.setArista(2, 4);
-		g.setArista(3, 4);
-		g.setArista(3, 5);
-		g.setArista(4, 6);
+		g.setArista(0, 3);
+		g.setArista(0, 4);
+		g.setArista(1, 2);
+		g.setArista(1, 5);
+		g.setArista(2, 5);
+		g.setArista(3, 6);
+		g.setArista(5, 6);
+		g.setArista(5, 7);
 		
-		
-		Set<Integer> V0 = new HashSet<Integer>();
-		
-		V0.add(0);
-		V0.add(1);
-		
-		Modelo m = new Modelo(g, V0, 10);
+		g.setPeso(1, 2, -100);
+		g.setPeso(1, 5, -100);
+		g.setPeso(5, 6, -100);
+	
+		Modelo m = new Modelo(g, 0, 10);
 		
 		m.solve(new ByteArrayOutputStream());
 		new GraphRenderer(g, m.getSolucion());

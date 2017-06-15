@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
 
+import util.Grafo;
+
 public class Modelo {
 
 	private Grafo g;
