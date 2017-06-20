@@ -1,7 +1,9 @@
 package util;
 
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
 
 public class GrafosFactory {
 
@@ -14,6 +16,43 @@ public class GrafosFactory {
 				g.setArista(i, j + n);
 
 		return g;
+	}
+
+	/***
+	 * Generamos un árbol random
+	 * 
+	 * @param vertices
+	 * @param density
+	 * @return
+	 */
+	public static Grafo randomTree(int maxVert, int maxVerticesPorHijo) {
+
+		GrafoBuilder b = new GrafoBuilder();
+
+		Random rand = new Random();
+		
+		
+		List<Integer> vertices = new ArrayList<Integer>();
+		
+		vertices.add(b.addVertice());
+		int indiceActual = 0;
+		
+		while (b.vertices() < maxVert && indiceActual < vertices.size()) {
+			
+			int actual = vertices.get(indiceActual);
+			
+			int hijos = rand.nextInt(maxVerticesPorHijo);
+			
+			for (int w = 0; w < hijos; w++) {
+				int nuevo = b.addVertice();
+				b.addArista(actual, nuevo);
+				vertices.add(nuevo);
+			}
+			indiceActual++;
+		}
+		
+		return b.buildGrafo();
+
 	}
 
 	/***

@@ -18,6 +18,8 @@ public class Grafo {
 		this.pesosAristas = new double[n][n];
 		this.pesosVertices = new double[n];
 	}
+	
+	
 
 	public int gradoMaximo() {
 

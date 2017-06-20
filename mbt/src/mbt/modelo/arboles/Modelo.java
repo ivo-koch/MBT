@@ -7,6 +7,7 @@ import ilog.cplex.IloCplex;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 import util.Grafo;
@@ -31,12 +32,12 @@ public class Modelo {
 
 	private int maxT = 0;
 
-	private int[] solucion;
+	private long[] solucion;
 
-	public Modelo(Grafo g, int v0, int maxT) {
+	public Modelo(Grafo g, int v0) {
 
 		this.g = g;
-		this.maxT = maxT;
+		this.maxT = g.getVertices() - 1;
 		this.v0 = v0;
 	}
 
@@ -53,7 +54,7 @@ public class Modelo {
 			for (int j = 0; j < g.getVertices(); ++j)
 				if (i != j && g.isArista(i, j)) {
 					int Ni = g.getVecinos(i).size();
-					x[i][j] = new IloNumVar[Ni];					
+					x[i][j] = new IloNumVar[Ni];
 					for (int k = 0; k < Ni; k++)
 						x[i][j][k] = cplex.boolVar();
 				}
@@ -83,10 +84,10 @@ public class Modelo {
 		// variable w
 		w = new IloNumVar[g.getVertices()][g.getVertices()];
 		for (int i = 0; i < g.getVertices(); ++i)
-			for (int j = i + 1; j < g.getVertices(); ++j){			
-					w[i][j] = cplex.boolVar();
-					w[j][i] = cplex.boolVar();
-				}
+			for (int j = i + 1; j < g.getVertices(); ++j) {
+				w[i][j] = cplex.boolVar();
+				w[j][i] = cplex.boolVar();
+			}
 
 		// función objetivo.
 		// TODO: OJO que faltan los pesos en los árboles.
@@ -107,6 +108,13 @@ public class Modelo {
 		// constraints
 		ArrayList<IloRange> restricciones = new ArrayList<IloRange>();
 
+		for (int i = 0; i < g.getVertices(); ++i)
+			if (i != v0 && g.isArista(i, v0)) {
+				IloNumExpr lhs = cplex.linearIntExpr();
+				lhs = cplex.sum(lhs, cplex.prod(1.0, y[i][v0]));
+				restricciones.add(cplex.addLe(lhs, 0));
+			}
+
 		// restricción (28)
 		for (int i = 0; i < g.getVertices(); ++i)
 			for (int j : g.getVecinos(i))
@@ -117,32 +125,30 @@ public class Modelo {
 								IloNumExpr lhs = cplex.linearIntExpr();
 								lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 								lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][jPrime][kPrima]));
-								lhs = cplex.sum(lhs, cplex.prod(-1.0, w[j][jPrime]));
+								lhs = cplex.sum(lhs, cplex.prod(1.0, w[j][jPrime]));
 								restricciones.add(cplex.addLe(lhs, 2));
 							}
 						}
 
 		// restricción (29)
-		
-		//TODO: Más huevo con esta cota, man.
-		double M = Math.pow(g.getVertices(), 3);
 
+		// TODO: Más huevo con esta cota, man.
+		double M = Math.pow(g.getVertices(), 3);
+	
 		for (int j = 0; j < g.getVertices(); ++j)
 			for (int jPrime = 0; jPrime < g.getVertices(); ++jPrime)
 				if (j != jPrime) {
 
-					Set<Integer> Nj = g.getVecinos(j);
-					Set<Integer> NjPrime = g.getVecinos(jPrime);
+					Set<Integer> Nj = new HashSet<Integer>(g.getVecinos(j));
+					Set<Integer> NjPrime = new HashSet<Integer>(g.getVecinos(jPrime));
 
 					Nj.retainAll(NjPrime);
-					Nj.remove(j);
-					Nj.remove(jPrime);
 					if (!Nj.isEmpty()) {
 						IloNumExpr lhs = cplex.linearIntExpr();
-						lhs = cplex.sum(lhs, cplex.prod(1.0, t[j]));
-						lhs = cplex.sum(lhs, cplex.prod(-1.0, t[jPrime]));						
-						lhs = cplex.sum(lhs, cplex.prod(M, w[j][jPrime]));
-						restricciones.add(cplex.addLe(lhs, M - 1));
+						lhs = cplex.sum(lhs, cplex.prod(-1.0, t[j]));
+						lhs = cplex.sum(lhs, cplex.prod(1.0, t[jPrime]));
+						lhs = cplex.sum(lhs, cplex.prod(-M, w[j][jPrime]));
+						restricciones.add(cplex.addLe(lhs, 0));
 					}
 				}
 
@@ -167,14 +173,13 @@ public class Modelo {
 
 		// restricción (32)
 		for (int i = 0; i < g.getVertices(); ++i)
-			for (int j = 0; j < g.getVertices(); ++j)
-				if (i != j && g.isArista(i, j)) {
-					IloNumExpr lhs = cplex.linearIntExpr();
-					for (int k = 0; k < g.getVecinos(i).size(); k++)
-						lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
+			for (int k = 0; k < g.getVecinos(i).size(); k++) {
+				IloNumExpr lhs = cplex.linearIntExpr();
+				for (int j : g.getVecinos(i))
+					lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
-					restricciones.add(cplex.addLe(lhs, 1));
-				}
+				restricciones.add(cplex.addLe(lhs, 1));
+			}
 
 		// restricción (33)
 		for (int i = 0; i < g.getVertices(); ++i)
@@ -184,7 +189,7 @@ public class Modelo {
 					lhs = cplex.sum(lhs, cplex.prod(1.0, t[i]));
 
 					for (int k = 0; k < g.getVecinos(i).size(); k++)
-						lhs = cplex.sum(lhs, cplex.prod(-1.0, x[i][j][k]));
+						lhs = cplex.sum(lhs, cplex.prod(-(k + 1), x[i][j][k]));
 
 					lhs = cplex.sum(lhs, cplex.prod(-1.0, t[j]));
 
@@ -214,7 +219,7 @@ public class Modelo {
 						IloNumExpr lhs = cplex.linearIntExpr();
 						lhs = cplex.sum(lhs, cplex.prod(1.0, y[i][j]));
 
-						for (int v: g.getVecinos(i))
+						for (int v : g.getVecinos(i))
 							lhs = cplex.sum(lhs, cplex.prod(-1.0, y[v][i]));
 
 						restricciones.add(cplex.addLe(lhs, 0));
@@ -248,18 +253,42 @@ public class Modelo {
 		for (int j = 0; j < g.getVertices(); ++j)
 			for (int jPrime = j + 1; jPrime < g.getVertices(); ++jPrime) {
 
-				Set<Integer> Nj = g.getVecinos(j);
-				Set<Integer> NjPrime = g.getVecinos(jPrime);
+				Set<Integer> Nj = new HashSet<Integer>(g.getVecinos(j));
+				Set<Integer> NjPrime = new HashSet<Integer>(g.getVecinos(jPrime));
 
 				Nj.retainAll(NjPrime);
-				Nj.remove(j);
-				Nj.remove(jPrime);
+
 				if (!Nj.isEmpty()) {
 					IloNumExpr lhs = cplex.linearIntExpr();
 					lhs = cplex.sum(lhs, cplex.prod(1.0, w[j][jPrime]));
 					lhs = cplex.sum(lhs, cplex.prod(1.0, w[jPrime][j]));
 					restricciones.add(cplex.addLe(lhs, 1));
 				}
+			}
+
+		// restricción (39)
+		for (int i = 0; i < g.getVertices(); ++i)
+			for (int j = 0; j < g.getVertices(); ++j)
+				if (i != j && g.isArista(i, j)) {
+					IloNumExpr lhs = cplex.linearIntExpr();
+					lhs = cplex.sum(lhs, cplex.prod(-1.0, y[i][j]));
+					for (int k = 0; k < g.getVecinos(i).size(); k++)
+						lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
+
+					restricciones.add(cplex.addEq(lhs, 0));
+				}
+
+		// restricción (40)
+		for (int i = 0; i < g.getVertices(); ++i)
+			for (int k = 0; k < g.getVecinos(i).size() - 1; k++) {
+				IloNumExpr lhs = cplex.linearIntExpr();
+				for (int j : g.getVecinos(i))
+					lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k + 1]));
+
+				for (int j : g.getVecinos(i))
+					lhs = cplex.sum(lhs, cplex.prod(-1.0, x[i][j][k]));
+
+				restricciones.add(cplex.addLe(lhs, 0));
 			}
 
 		rng[0] = new IloRange[restricciones.size()];
@@ -293,17 +322,39 @@ public class Modelo {
 
 		if (ok) {
 
-			int[] t_v = new int[g.getVertices()];
+			for (int v = 0; v < g.getVertices(); v++) {
+				for (int w = 0; w < g.getVertices(); w++) {
+					if (v != w && g.isArista(v, w) && cplex.getValue(y[v][w]) > 0.99)
+						System.out.println("y[" + v + ", " + w + "]");
+				}
+			}
+
+			for (int v = 0; v < g.getVertices(); v++) {
+				for (int w = 0; w < g.getVertices(); w++) {
+					if (v != w && g.isArista(v, w) && cplex.getValue(yDist[v][w]) > 0.99)
+						System.out.println("yDist[" + v + ", " + w + "]");
+				}
+			}
+
+			for (int v = 0; v < g.getVertices(); v++)
+				for (int w = v + 1; w < g.getVertices(); w++)
+					try {
+						if (cplex.getValue(this.w[v][w]) > 0.99)
+							System.out.println("w[" + v + ", " + w + "]");
+					} catch (Exception e) {
+					}
+
+			solucion = new long[g.getVertices()];
 			double[][] t_e = new double[g.getVertices()][g.getVertices()];
 
 			for (int v = 0; v < g.getVertices(); v++) {
-				t_v[v] = new Double(cplex.getValue(this.t[v])).intValue();
-				System.out.println("t[" + v + "] = " + t_v[v] + " ");
+				solucion[v] = Math.round(cplex.getValue(this.t[v]));
+				System.out.println("t[" + v + "] = " + solucion[v] + " (" + cplex.getValue(this.t[v]) + ")");
 				for (int w : g.getVecinos(v)) {
 					try {
 						if (cplex.getValue(y[v][w]) == 1)
 							for (int k = 0; k < g.getVecinos(v).size(); k++)
-								if (cplex.getValue(x[v][w][k]) == 1) {
+								if (cplex.getValue(x[v][w][k]) > 0.99) {
 									t_e[v][w] = k;
 									System.out.println("t_e[" + v + "," + w + "] = " + k);
 								}
@@ -323,7 +374,7 @@ public class Modelo {
 		this.g = g;
 	}
 
-	public int[] getSolucion() {
+	public long[] getSolucion() {
 		return solucion;
 	}
 
