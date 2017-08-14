@@ -14,7 +14,7 @@ import util.GraphUtils;
 
 public class TestModelo {
 
-	//@Test
+	@Test
 	public void testGrafo1() throws Exception {
 		// probamos con el grafo del viernes 16.07
 		Grafo g = new Grafo(8);
@@ -31,9 +31,9 @@ public class TestModelo {
 		g.setArista(5, 7);
 		
 		for (int i = 0 ; i < g.getVertices(); i++)
-			g.setPeso(i, -0.5);
+			g.setPeso(i, 1);
 
-		Modelo m = new Modelo(g, 0, 1);
+		Modelo m = new Modelo(g, 0, 1, true);
 
 		m.solve(new ByteArrayOutputStream());
 
@@ -56,7 +56,7 @@ public class TestModelo {
 		g.setArista(3, 4);
 		g.setArista(4, 5);
 
-		Modelo m = new Modelo(g, 0, 1);
+		Modelo m = new Modelo(g, 0, 1, true);
 
 		m.solve(new ByteArrayOutputStream());
 
@@ -83,7 +83,7 @@ public class TestModelo {
 		g.setArista(1, 7);
 		g.setArista(2, 7);
 
-		Modelo m = new Modelo(g, 0, 1);
+		Modelo m = new Modelo(g, 0, 1, true);
 
 		m.solve(new ByteArrayOutputStream());
 
@@ -98,7 +98,7 @@ public class TestModelo {
 
 		Grafo g = GrafosFactory.randomTree(10, 4);
 
-		Modelo m = new Modelo(g, 0, 1);
+		Modelo m = new Modelo(g, 0, 1, true);
 
 		m.solve(new ByteArrayOutputStream());
 
@@ -110,14 +110,14 @@ public class TestModelo {
 
 		Grafo g = GraphUtils.loadFromTxt("G11_ver");
 
-		Modelo m = new Modelo(g, 0, 1);
+		Modelo m = new Modelo(g, 0, 1, true);
 
 		m.solve(new ByteArrayOutputStream());
 
 		assertEquals(m.getSolucion()[0], calcularT(g));
 	}
 
-	@Test
+	//@Test
 	public void testArboles() throws Exception {
 
 		// testea si el resultado del costo de un árbol usando prog dinámica es
@@ -129,16 +129,16 @@ public class TestModelo {
 				Grafo g = GrafosFactory.randomTree(i, j);
 
 				for (int v = 0; v < g.getVertices(); v++)
-					g.setPeso(v, 10);
+					g.setPeso(v, -0.5);
 
 				System.out.println("Fin generación grafo G " + i + " n:" + g.getVertices() + " m: " + g.getAristas());
 				//GraphUtils.saveToTxt("G" + i, g);
-				Modelo m = new Modelo(g, 0, 1);
+				Modelo m = new Modelo(g, 0, 1, true);
 
 				m.solve(new ByteArrayOutputStream());
 
 				System.out.println("Fin solver");
-				assertEquals(m.getSolucion()[0], calcularT(g));
+				//assertEquals(m.getSolucion()[0], calcularT(g));
 			}
 	}
 
