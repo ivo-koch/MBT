@@ -68,6 +68,10 @@ public class Grafo {
 		return aristas;
 	}
 
+	public void show () {
+		new GraphRenderer(this);
+	}
+	
 	public double getPeso(int i, int j) {
 		checkArista(i, j);
 		return pesosAristas[i][j];
@@ -106,6 +110,7 @@ public class Grafo {
 		this.aristas[j][i] = true;
 	}
 
+	
 	private void checkRange(int i, int j) {
 		if (i < 0 || i >= n || j < 0 || j >= n || i == j)
 			throw new IllegalArgumentException("Par de vértices inválido: (" + i + ", " + j + "), n = " + n);

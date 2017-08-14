@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
 public class GrafosFactory {
 
 	public static Grafo K(int n, int m) {
@@ -30,27 +29,32 @@ public class GrafosFactory {
 		GrafoBuilder b = new GrafoBuilder();
 
 		Random rand = new Random();
+	
+		b.addVertice();
 		
-		
-		List<Integer> vertices = new ArrayList<Integer>();
-		
-		vertices.add(b.addVertice());
-		int indiceActual = 0;
-		
-		while (b.vertices() < maxVert && indiceActual < vertices.size()) {
+		int padre = 0;
+		while (b.vertices() < maxVert) {
 			
-			int actual = vertices.get(indiceActual);
-			
-			int hijos = rand.nextInt(maxVerticesPorHijo);
-			
-			for (int w = 0; w < hijos; w++) {
-				int nuevo = b.addVertice();
-				b.addArista(actual, nuevo);
-				vertices.add(nuevo);
+			//el nivel anterior no tuvo hijos
+			int minCantHijos = 0;
+			if (padre >= b.vertices())
+			{
+				padre = b.vertices() - 1;
+				minCantHijos = 1;
 			}
-			indiceActual++;
+			
+			int hijos = rand.nextInt(maxVerticesPorHijo) + minCantHijos;
+						
+			for (int w = 0; w < hijos; w++) {
+				if (b.vertices() < maxVert) {
+					int nuevo = b.addVertice();
+					b.addArista(padre, nuevo);
+				}
+			}
+				
+			padre++;
 		}
-		
+
 		return b.buildGrafo();
 
 	}

@@ -33,6 +33,8 @@ public class Modelo {
 	private int maxT = 0;
 
 	private long[] solucion;
+	
+	private long tiempoEjecucion;
 
 	public Modelo(Grafo g, int v0) {
 
@@ -310,10 +312,10 @@ public class Modelo {
 		// cplex.setParam(IloCplex.IntParam.AdvInd, 1);
 		// cplex.setParam(IloCplex.IntParam.MIPDisplay, 5);
 		// optimize and output solution information
-
+		long start = System.currentTimeMillis();
 		boolean ok = cplex.solve();
-		long end = System.currentTimeMillis();
-
+		
+		tiempoEjecucion = System.currentTimeMillis() - start;
 		System.out.println("Gap " + cplex.getMIPRelativeGap());
 		System.out.println("Mejor sol entera " + cplex.getObjValue());
 		System.out.println("Status " + cplex.getCplexStatus());
@@ -378,4 +380,8 @@ public class Modelo {
 		return solucion;
 	}
 
+	public long getTiempoEjecucion() {
+		return tiempoEjecucion;
+	}
+	
 }
