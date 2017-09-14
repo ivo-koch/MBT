@@ -20,24 +20,25 @@ public class TestModelo {
 		Grafo g = new Grafo(8);
 
 		g.setArista(0, 1);
-		g.setArista(0, 2);
+		//g.setArista(0, 2);
 		g.setArista(0, 3);
 		g.setArista(0, 4);
 		g.setArista(1, 2);
 		g.setArista(1, 5);
-		g.setArista(2, 5);
+		//g.setArista(2, 5);
 		g.setArista(3, 6);
-		g.setArista(5, 6);
+		//g.setArista(5, 6);
 		g.setArista(5, 7);
 		
 		for (int i = 0 ; i < g.getVertices(); i++)
-			g.setPeso(i, 1);
+			g.setPeso(i, -10);
 
 		Modelo m = new Modelo(g, 0, 1, true);
 
 		m.solve(new ByteArrayOutputStream());
 
-		assertEquals(m.getSolucion()[0], 6);
+		//assertEquals(calcularT(g), 3);
+		assertEquals(m.getSolucion()[0], 3);
 	}
 
 	//@Test
@@ -56,7 +57,7 @@ public class TestModelo {
 		g.setArista(3, 4);
 		g.setArista(4, 5);
 
-		Modelo m = new Modelo(g, 0, 1, true);
+		Modelo m = new Modelo(g, 0, 1, false);
 
 		m.solve(new ByteArrayOutputStream());
 
@@ -98,7 +99,7 @@ public class TestModelo {
 
 		Grafo g = GrafosFactory.randomTree(10, 4);
 
-		Modelo m = new Modelo(g, 0, 1, true);
+		Modelo m = new Modelo(g, 0, 1, false);
 
 		m.solve(new ByteArrayOutputStream());
 
@@ -117,14 +118,14 @@ public class TestModelo {
 		assertEquals(m.getSolucion()[0], calcularT(g));
 	}
 
-	//@Test
+	@Test
 	public void testArboles() throws Exception {
 
 		// testea si el resultado del costo de un árbol usando prog dinámica es
 		// el mismo del modelo.
 
 		// for (int maxVertices = 10; maxVertices < 200; maxVertices +)
-		for (int i = 50; i < 200; i++)
+		for (int i = 10; i < 50; i++)
 			for (int j = 1; j < i; j++) {
 				Grafo g = GrafosFactory.randomTree(i, j);
 
@@ -138,7 +139,7 @@ public class TestModelo {
 				m.solve(new ByteArrayOutputStream());
 
 				System.out.println("Fin solver");
-				//assertEquals(m.getSolucion()[0], calcularT(g));
+				assertEquals(m.getSolucion()[0], calcularT(g));
 			}
 	}
 

@@ -44,7 +44,7 @@ public class TestModelo {
 
 						mbt.modelo.compacto.variables.x.Modelo modeloCompacto = new mbt.modelo.compacto.variables.x.Modelo(g, V0);
 
-						mbt.modelo.arboles.Modelo modeloArboles = new mbt.modelo.arboles.Modelo(g, 0);
+						mbt.modelo.arboles.modificado.Modelo modeloArboles = new mbt.modelo.arboles.modificado.Modelo(g, 0, 1, false);
 
 						modeloCompacto.solve(new ByteArrayOutputStream());
 

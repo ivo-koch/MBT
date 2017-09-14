@@ -25,7 +25,7 @@ public class Modelo {
 
 	public Modelo(Grafo g, Set<Integer> V0, int max) {
 
-		this.g = g.aumentar(2);
+		//this.g = g.aumentar(2);
 
 		int s = this.g.getVertices() - 2;
 		int t = this.g.getVertices() - 1;

@@ -1,9 +1,64 @@
 package util;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Grafo {
+
+	public class AristaDirigida {
+
+		int v1;
+
+		int v2;
+
+		public AristaDirigida(int v1, int v2) {
+			this.v1 = v1;
+			this.v2 = v2;
+		}
+		
+		public int getV1() {
+			return v1;
+		}
+		
+		public int getV2() {
+			return v2;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getOuterType().hashCode();
+			result = prime * result + v1;
+			result = prime * result + v2;
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AristaDirigida other = (AristaDirigida) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
+			if (v1 != other.v1)
+				return false;
+			if (v2 != other.v2)
+				return false;
+			return true;
+		}
+
+		private Grafo getOuterType() {
+			return Grafo.this;
+		}
+
+	}
 
 	// Cantidad de aristas
 	private int n;
@@ -18,8 +73,6 @@ public class Grafo {
 		this.pesosAristas = new double[n][n];
 		this.pesosVertices = new double[n];
 	}
-	
-	
 
 	public int gradoMaximo() {
 
@@ -33,6 +86,8 @@ public class Grafo {
 	// Aristas
 	private boolean[][] aristas;
 
+	private Map<Integer, Set<AristaDirigida>> verticesConAristas = new HashMap<Integer, Set<AristaDirigida>>();
+
 	public Set<Integer> getVecinos(int v) {
 		Set<Integer> res = new HashSet<Integer>();
 
@@ -41,21 +96,33 @@ public class Grafo {
 				res.add(w);
 
 		return res;
-
 	}
 
-	public Grafo aumentar(int vertices) {
-
-		Grafo g = new Grafo(this.getVertices() + vertices);
-
-		for (int i = 0; i < this.getVertices(); ++i)
-			for (int j = i + 1; j < this.getVertices(); ++j)
-				if (this.isArista(i, j))
-					g.setArista(i, j);
-
-		return g;
-
+	
+	public AristaDirigida getArista(int i, int v) {
+		for (AristaDirigida arista: getAristasIncidentes(i))
+			if (arista.v2 == v)
+				return arista;
+		
+		throw new RuntimeException("La arista no existe");
 	}
+	
+	public Set<AristaDirigida> getAristasIncidentes(int v) {
+		return verticesConAristas.get(v);
+	}
+
+	// public Grafo aumentar(int vertices) {
+	//
+	// Grafo g = new Grafo(this.getVertices() + vertices);
+	//
+	// for (int i = 0; i < this.getVertices(); ++i)
+	// for (int j = i + 1; j < this.getVertices(); ++j)
+	// if (this.isArista(i, j))
+	// g.setArista(i, j);
+	//
+	// return g;
+	//
+	// }
 
 	public int getAristas() {
 
@@ -68,10 +135,10 @@ public class Grafo {
 		return aristas;
 	}
 
-	public void show () {
+	public void show() {
 		new GraphRenderer(this);
 	}
-	
+
 	public double getPeso(int i, int j) {
 		checkArista(i, j);
 		return pesosAristas[i][j];
@@ -108,9 +175,23 @@ public class Grafo {
 
 		this.aristas[i][j] = true;
 		this.aristas[j][i] = true;
+
+		addArista(i, j);
+		addArista(j, i);
+
 	}
 
-	
+	private void addArista(int i, int j) {
+		Set<AristaDirigida> set;
+
+		if (!verticesConAristas.containsKey(i))
+			set = new HashSet<AristaDirigida>();
+		else
+			set = verticesConAristas.get(i);
+
+		set.add(new AristaDirigida(i, j));
+	}
+
 	private void checkRange(int i, int j) {
 		if (i < 0 || i >= n || j < 0 || j >= n || i == j)
 			throw new IllegalArgumentException("Par de vértices inválido: (" + i + ", " + j + "), n = " + n);
@@ -135,4 +216,5 @@ public class Grafo {
 	public int getVertices() {
 		return n;
 	}
+
 }

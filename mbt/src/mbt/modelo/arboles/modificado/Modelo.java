@@ -1,5 +1,6 @@
 package mbt.modelo.arboles.modificado;
 
+import ilog.concert.IloException;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.concert.IloRange;
@@ -47,6 +48,68 @@ public class Modelo {
 
 	public void solve(OutputStream baos) throws Exception {
 
+		IloCplex cplex = buildModel(baos);
+
+		// cplex.exportModel("modelo.lp");
+		// cplex.setParam(IloCplex.IntParam.NodeLim, 0);
+		// // cplex.setParam(IloCplex.IntParam.BndStrenInd, 1);
+		//
+		// cplex.setParam(IloCplex.IntParam.Cliques, -1);
+		// cplex.setParam(IloCplex.IntParam.ZeroHalfCuts, -1);
+		// cplex.setParam(IloCplex.IntParam.FracCuts, -1);
+		cplex.setParam(IloCplex.DoubleParam.TiLim, 900);
+		// cplex.setParam(IloCplex.IntParam.AdvInd, 1);
+		// cplex.setParam(IloCplex.IntParam.MIPDisplay, 5);
+		// optimize and output solution information
+		long start = System.currentTimeMillis();
+		boolean ok = cplex.solve();
+
+		tiempoEjecucion = System.currentTimeMillis() - start;
+		System.out.println("Gap " + cplex.getMIPRelativeGap());
+		System.out.println("Mejor sol entera " + cplex.getObjValue());
+		System.out.println("Status " + cplex.getCplexStatus());
+		System.out.println("Best bound " + cplex.getBestObjValue());
+		System.out.print(baos.toString());
+
+		if (ok) {
+
+			for (int v = 0; v < g.getVertices(); v++) {
+				try {
+					if (cplex.getValue(z[v]) > 0.99)
+						System.out.println("z[" + v + "]");
+				} catch (Exception e) {
+				}
+			}
+
+			// for (int v = 0; v < g.getVertices(); v++) {
+			// for (int w = 0; w < g.getVertices(); w++) {
+			// if (v != w && g.isArista(v, w) && cplex.getValue(y[v][w]) > 0.99)
+			// System.out.println("y[" + v + ", " + w + "]");
+			// }
+			// }
+
+			solucion = new long[g.getVertices()];
+			double[][] t_e = new double[g.getVertices()][g.getVertices()];
+
+			for (int v = 0; v < g.getVertices(); v++) {
+				solucion[v] = Math.round(cplex.getValue(this.t[v]));
+				System.out.println("t[" + v + "] = " + solucion[v] + " (" + cplex.getValue(this.t[v]) + ")");
+				for (int w : g.getVecinos(v)) {
+					for (int k = 0; k < g.getVecinos(v).size(); k++)
+						try {
+							if (cplex.getValue(x[v][w][k]) > 0.99) {
+								t_e[v][w] = k;
+								System.out.println("t_e[" + v + "," + w + "] = " + k);
+							}
+						} catch (Exception e) {
+						}
+				}
+			}
+			System.out.println();
+		}
+	}
+
+	private IloCplex buildModel(OutputStream baos) throws IloException {
 		// create CPLEX optimizer/modeler
 		IloCplex cplex = new IloCplex();
 
@@ -148,6 +211,31 @@ public class Modelo {
 						restricciones.add(cplex.addLe(lhs, 0));
 					}
 
+		// restricción (27)
+		// VER CON DONNE.
+		// for (int i = 0; i < g.getVertices(); ++i)
+		// if (i != v0)
+		// for (int j = 0; j < g.getVertices(); ++j)
+		// if (i != j && g.isArista(i, j)) {
+		// for (int k = 0; k < g.getVecinos(i).size(); k++) {
+		//
+		// IloNumExpr lhs = cplex.linearIntExpr();
+		//
+		// lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
+		//
+		// // lhs = cplex.sum(lhs, cplex.prod(1.0, y[i][j]));
+		//
+		// for (int v : g.getVecinos(i))
+		// for (int kPrima = 0; kPrima < k; kPrima++)
+		// if (kPrima < g.getVecinos(v).size())
+		// lhs = cplex.sum(lhs, cplex.prod(-1.0, x[v][i][kPrima]));
+		//
+		// // lhs = cplex.sum(lhs, cplex.prod(-1.0, y[v][i]));
+		//
+		// restricciones.add(cplex.addLe(lhs, 0));
+		// }
+		// }
+
 		// restricción (28)
 		for (int j = 0; j < g.getVertices(); ++j) {
 			if (j != v0) {
@@ -217,63 +305,7 @@ public class Modelo {
 			rng[0][tr++] = range;
 
 		cplex.setOut(baos);
-
-		// cplex.exportModel("modelo.lp");
-		// cplex.setParam(IloCplex.IntParam.NodeLim, 0);
-		// // cplex.setParam(IloCplex.IntParam.BndStrenInd, 1);
-		//
-		// cplex.setParam(IloCplex.IntParam.Cliques, -1);
-		// cplex.setParam(IloCplex.IntParam.ZeroHalfCuts, -1);
-		// cplex.setParam(IloCplex.IntParam.FracCuts, -1);
-		cplex.setParam(IloCplex.DoubleParam.TiLim, 900);
-		// cplex.setParam(IloCplex.IntParam.AdvInd, 1);
-		// cplex.setParam(IloCplex.IntParam.MIPDisplay, 5);
-		// optimize and output solution information
-		long start = System.currentTimeMillis();
-		boolean ok = cplex.solve();
-
-		tiempoEjecucion = System.currentTimeMillis() - start;
-		System.out.println("Gap " + cplex.getMIPRelativeGap());
-		System.out.println("Mejor sol entera " + cplex.getObjValue());
-		System.out.println("Status " + cplex.getCplexStatus());
-		System.out.println("Best bound " + cplex.getBestObjValue());
-		System.out.print(baos.toString());
-
-		if (ok) {
-
-			for (int v = 0; v < g.getVertices(); v++) {
-				try {
-					if (cplex.getValue(z[v]) > 0.99)
-						System.out.println("z[" + v + "]");
-				} catch (Exception e) {
-				}
-			}
-
-			// for (int v = 0; v < g.getVertices(); v++) {
-			// for (int w = 0; w < g.getVertices(); w++) {
-			// if (v != w && g.isArista(v, w) && cplex.getValue(y[v][w]) > 0.99)
-			// System.out.println("y[" + v + ", " + w + "]");
-			// }
-			// }
-
-			solucion = new long[g.getVertices()];
-			double[][] t_e = new double[g.getVertices()][g.getVertices()];
-
-			for (int v = 0; v < g.getVertices(); v++) {
-				solucion[v] = Math.round(cplex.getValue(this.t[v]));
-				System.out.println("t[" + v + "] = " + solucion[v] + " (" + cplex.getValue(this.t[v]) + ")");
-				for (int w : g.getVecinos(v)) {
-					for (int k = 0; k < g.getVecinos(v).size(); k++)
-						try {
-							if (cplex.getValue(x[v][w][k]) > 0.99) {
-								t_e[v][w] = k;
-								System.out.println("t_e[" + v + "," + w + "] = " + k);
-							}
-						} catch (Exception e) {}
-				}
-			}
-			System.out.println();
-		}
+		return cplex;
 	}
 
 	public Grafo getG() {
