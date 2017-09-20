@@ -60,7 +60,7 @@ public final class BranchAndPrice extends AbstractBranchAndPrice<DataModel, Arbo
     protected boolean isIntegerNode(BAPNode<DataModel, Arbol> node) {
         int vertexCount=0;
         for(Arbol column : node.getSolution())
-            vertexCount+= column.vertices.size();
-        return vertexCount==dataModel.grafo.getVertices();
+            vertexCount+= column.getVertices().size();
+        return vertexCount==dataModel.getGrafo().getVertices();
     }
 }

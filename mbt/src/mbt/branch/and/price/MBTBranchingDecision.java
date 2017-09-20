@@ -1,54 +1,53 @@
 package mbt.branch.and.price;
 
-import org.jgrapht.util.VertexPair;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.branchingDecisions.BranchingDecision;
 import org.jorlib.frameworks.columnGeneration.master.cutGeneration.AbstractInequality;
 
 import util.Grafo.AristaDirigida;
 
 /**
- * Ensure that two vertices are assigned the same color
- * 
- * @author Joris Kinable
- * @version 29-6-2016
+ * Una decisión de branching para nosotros es:
+ * Vamos del vértice origen de la arista al destino.
+ * Entonces el offset del origen va a ser la variable offsetOrigen
+ * y el offset del destino va a ser offsetDestino.
  */
 public final class MBTBranchingDecision implements BranchingDecision<DataModel, Arbol> {
 
 	private final AristaDirigida arista;
-	private final int offsetOrigen;
-	private final int offsetDestino;
+	//private final int offsetOrigen;
+	//private final int offsetDestino;
+	
 
-	public final Offset nuevoOffsetDestino = null;
-
-	public MBTBranchingDecision(AristaDirigida arista, int offsetOrigen, int offsetDestino) {
+	public MBTBranchingDecision(AristaDirigida arista) {
 		this.arista = arista;
-		this.offsetOrigen = offsetOrigen;
-		this.offsetDestino = offsetDestino;
+		//this.offsetOrigen = offsetOrigen;
+		//this.offsetDestino = offsetDestino;
 	}
 
 	public AristaDirigida getArista() {
 		return arista;
 	}
-
-	public int getOffsetOrigen() {
-		return offsetOrigen;
-	}
-
-	public int getOffsetDestino() {
-		return offsetDestino;
-	}
+//
+//	public int getOffsetOrigen() {
+//		return offsetOrigen;
+//	}
+//
+//	public int getOffsetDestino() {
+//		return offsetDestino;
+//	}
 
 	/**
-	 * Determine whether the given column remains feasible for the child node
+	 * Determina si una columna es compatible con el branching actual.
+	 * Es compatible si el árbol que nos pasan NO tiene el vértice destino, 
+	 * porque quiere decir que salió desde otro v0.
 	 * 
 	 * @param column
 	 *            column
-	 * @return true if the column is compliant with the branching decision
+	 * @return true
 	 */
 	@Override
 	public boolean columnIsCompatibleWithBranchingDecision(Arbol column) {
-		//return !(column.vertices.contains(vertexPair.getFirst()) ^ column.vertices.contains(vertexPair.getSecond()));
-		return true;
+		return !column.getVertices().contains(this.arista.getV2());
 	}
 
 	/**
@@ -65,6 +64,6 @@ public final class MBTBranchingDecision implements BranchingDecision<DataModel, 
 
 	@Override
 	public String toString() {
-		return "Samecolor "; //+ vertexPair;
+		return "Branching " + this.arista.getV1() + "->" + this.arista.getV2();
 	}
 }

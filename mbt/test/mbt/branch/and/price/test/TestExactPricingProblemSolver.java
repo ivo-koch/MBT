@@ -15,11 +15,11 @@ public class TestExactPricingProblemSolver {
 	@Test
 	public void testModelo() {
 		
-		DataModel dataModel = new DataModel();
-		
 		
 		Grafo g = new Grafo(10);
 		Set<Integer> V0 = new HashSet<Integer>();
+		
+		DataModel dataModel = new DataModel(g, V0);
 		
 		
 		MBTPricingProblem pricingProblem = new MBTPricingProblem(dataModel, "testPricingProblem");

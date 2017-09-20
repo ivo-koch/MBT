@@ -1,87 +1,77 @@
 package mbt.branch.and.price;
 
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.jgrapht.util.VertexPair;
-import org.jorlib.demo.frameworks.columnGeneration.graphColoringBAP.bap.branching.branchingDecisions.DifferentColor;
-import org.jorlib.demo.frameworks.columnGeneration.graphColoringBAP.bap.branching.branchingDecisions.SameColor;
-import org.jorlib.demo.frameworks.columnGeneration.graphColoringBAP.cg.ChromaticNumberPricingProblem;
-import org.jorlib.demo.frameworks.columnGeneration.graphColoringBAP.cg.IndependentSet;
-import org.jorlib.demo.frameworks.columnGeneration.graphColoringBAP.model.ColoringGraph;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchCreator;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.BAPNode;
 
-import util.Grafo;
+import util.Grafo.AristaDirigida;
 
 /**
- * Class which creates new branches in the Branch-and-Price tree. This particular class branches on a pair of vertices, thereby creating
- * two branches. In one branch, these vertices receive the same color, whereas in the other branch they are colored differently
- * @author Joris Kinable
- * @version 29-6-2016
+ * Clase responsable de crear los branches.
+ * 
  */
 public final class MBTBranchCreator extends AbstractBranchCreator<DataModel, Arbol, MBTPricingProblem> {
 
-    /** Pair of vertices to branch on **/
-    VertexPair<Integer> candidateVertexPair=null;
+	public MBTBranchCreator(DataModel dataModel, MBTPricingProblem pricingProblem) {
+		super(dataModel, pricingProblem);
+	}
 
-    public MBTBranchCreator(DataModel dataModel, MBTPricingProblem pricingProblem) {
-        super(dataModel, pricingProblem);
-    }
+	/**
+	 * Podemos hacer un branching si hay un v fuera de V0.
+	 */
+	@Override
+	protected boolean canPerformBranching(List<Arbol> solution) {
 
-    /**
-     * Determine on which edge from the red or blue matchings we are going to branch.
-     * @param solution Fractional column generation solution
-     * @return true if a fractional edge exists
-     */
-    @Override
-    protected boolean canPerformBranching(List<Arbol> solution) {
-        //Find a vertex v1 which is in BOTH independent set s1 and independent set s2, and a vertex v2 which is ONLY in s1.
-        int v1=-1;
-        int v2=-1;
-        boolean foundPair=false;
-//        for(int i=0; i<solution.size()-1 && !foundPair; i++){
-//            for(int j=i+1; j<solution.size() && !foundPair; j++){
-//                IndependentSet s1=solution.get(i);
-//                IndependentSet s2=solution.get(j);
-//                v1=v2=-1;
-//
-//                for(Iterator<Integer> it=s1.vertices.iterator(); it.hasNext() && !foundPair; ){
-//                    int v=it.next();
-//                    if(v1==-1 && s2.vertices.contains(v))
-//                        v1=v;
-//                    else if(v2 == -1 && !s2.vertices.contains(v))
-//                        v2=v;
-//                    foundPair=!(v1==-1 || v2==-1);
-//                }
-//            }
-//        }
-        if(foundPair)
-            candidateVertexPair=new VertexPair<>(v1, v2);
-        return foundPair;
-    }
+		// decimos que hay un v fuera de V0 así.
+		return dataModel.getV0().size() < dataModel.getGrafo().getVertices();
+	}
 
-    /**
-     * Create the branches:
-     * <ol>
-     * <li>branch 1: pair of vertices {@code vertexPair} must be assigned the same color,</li>
-     * <li>branch 2: pair of vertices {@code vertexPair} must be assigned different colors,</li>
-     * </ol>
-     * @param parentNode Fractional node on which we branch
-     * @return List of child nodes
-     */
-    @Override
-    protected List<BAPNode<DataModel, Arbol>> getBranches(BAPNode<DataModel, Arbol> parentNode) {
-        //Branch 1: same color:
-       // SameColor branchingDecision1=new SameColor(candidateVertexPair);
-    	MBTBranchingDecision bd = new MBTBranchingDecision();
-        BAPNode<DataModel,Arbol> node2=this.createBranch(parentNode, bd, parentNode.getSolution(), parentNode.getInequalities());
+	/**
+	 * Creamos los branches
+	 * 
+	 * 
+	 * @param parentNode
+	 *            Nodo fraccionario a partir del cual brancheamos.
+	 * 
+	 * @return Lista de hijos para el branch.
+	 */
+	@Override
+	protected List<BAPNode<DataModel, Arbol>> getBranches(BAPNode<DataModel, Arbol> parentNode) {
 
-//        //Branch 2: different colors:
-//        DifferentColor branchingDecision2=new DifferentColor(candidateVertexPair);
-//        BAPNode<Grafo,Arbol> node1=this.createBranch(parentNode, branchingDecision2, parentNode.getSolution(), parentNode.getInequalities());
+		List<BAPNode<DataModel, Arbol>> branches = new ArrayList<BAPNode<DataModel, Arbol>>();
 
-        return Arrays.asList(node2);
-    }
+		// Buscamos el árbol fraccionario.
+		// Para eso, la única forma que tenemos de verlo desde acá es viendo los árboles
+		// que salgan del
+		// mismo v0
+		// en este getSolution nos da todas las columnas distintas de 0.
+		boolean[] v0YaEncontrado = new boolean[dataModel.getGrafo().getVertices()];
+		int v0ConMultiplesArboles = -1;
+		int offsetV0 = -1;
+		for (Arbol arbol : parentNode.getSolution()) {
+			if (v0YaEncontrado[arbol.getRoot()]) {
+				v0ConMultiplesArboles = arbol.getRoot();
+				offsetV0 = this.dataModel.getOffset()[arbol.getRoot()];
+				break;
+			}
+			v0YaEncontrado[arbol.getRoot()] = true;
+		}
+
+		if (v0ConMultiplesArboles == -1 || offsetV0 == -1)
+			throw new RuntimeException("Error, no encontramos un árbol fraccionario con más de un V0");
+
+		// Creamos un branch para cada arista desde v0, ajustando los offsets de acuerdo
+		// al que tenía v0.
+		for (AristaDirigida arista : dataModel.getGrafo().getAristasIncidentes(v0ConMultiplesArboles))
+			if (!this.dataModel.getV0().contains(arista.getV2())) {
+				MBTBranchingDecision bd = new MBTBranchingDecision(arista);
+				BAPNode<DataModel, Arbol> node = this.createBranch(parentNode, bd, parentNode.getSolution(),
+						parentNode.getInequalities());
+				branches.add(node);
+			}
+
+		return branches;
+	}
 }

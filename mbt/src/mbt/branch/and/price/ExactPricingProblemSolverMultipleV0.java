@@ -1,12 +1,10 @@
 package mbt.branch.and.price;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.branchingDecisions.BranchingDecision;
 import org.jorlib.frameworks.columnGeneration.io.TimeLimitExceededException;
@@ -23,35 +21,40 @@ import util.Grafo;
 import util.Grafo.AristaDirigida;
 
 /***
- * Implementación de solución exacta para el problema de pricing.
+ * Implementación de solución exacta para el problema de pricing para un V0 de
+ * varios vértices.
  */
 public final class ExactPricingProblemSolverMultipleV0
 		extends AbstractPricingProblemSolver<DataModel, Arbol, MBTPricingProblem> {
 
-	private IloCplex cplex; // Cplex instance.
-	private IloObjective obj; // Objective function
+	/*** Instancia de cplex **/
+	private IloCplex cplex;
+	/** Funcion objetivo */
+	private IloObjective obj;
 
+	/*** Variables del modelo **/
 	private IloNumVar[][][] x;
 	private IloNumVar[] z;
 	private IloNumVar[] t;
 	private IloNumVar[] w;
-	private int maxT;
 
+	/** Mantenemos acá las variables de la función objetivo */
 	IloNumVar[] varsEnFobj;
 
-	private TreeSet<Integer> V0;
+	/// Para la numeración de los constraints, ver el modelo en latex.
 
-	// Constraints del modelo de pricing que involucran un vértice de V0
+	/*** Diccionarios de Restricciones */
+	// indexado por la arista v0,j
 	private Map<Grafo.AristaDirigida, IloConstraint> constraints32;
 
+	// indexado por v0
 	private Map<Integer, IloConstraint> constraints33;
 
+	// indexado por v0
 	private Map<Integer, IloConstraint> constraints34;
 
+	// indexado por v0
 	private Map<Integer, IloConstraint> constraintsOffset;
-
-	// tiene que salir de exactamente un v0 \in V0
-	private IloConstraint desigualdad35;
 
 	/***
 	 * Crea un nuevo solver de pricing.
@@ -62,14 +65,12 @@ public final class ExactPricingProblemSolverMultipleV0
 	public ExactPricingProblemSolverMultipleV0(DataModel dataModel, MBTPricingProblem pricingProblem) {
 		super(dataModel, pricingProblem);
 		this.name = "ExactPricingProblemSolver";
-		this.V0 = new TreeSet<Integer>(dataModel.V0);
-
 		this.buildModel();
 	}
 
 	/**
 	 * Construye el problema de pricing: en nuestro caso, encontrar un árbol
-	 * generador de mínimo peso, con pesos
+	 * generador de mínimo peso, con pesos en los vértices.
 	 */
 	private void buildModel() {
 		try {
@@ -83,138 +84,89 @@ public final class ExactPricingProblemSolverMultipleV0
 			IloRange[][] rng = new IloRange[1][];
 
 			// variable x
-			x = new IloNumVar[dataModel.grafo.getVertices()][dataModel.grafo.getVertices()][];
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
-				for (int j = 0; j < dataModel.grafo.getVertices(); ++j)
-					if (i != j && dataModel.grafo.isArista(i, j)) {
-						int Ni = dataModel.grafo.getVecinos(i).size();
+			x = new IloNumVar[dataModel.getGrafo().getVertices()][dataModel.getGrafo().getVertices()][];
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
+				for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
+					if (i != j && dataModel.getGrafo().isArista(i, j)) {
+						int Ni = dataModel.getGrafo().getVecinos(i).size();
 						x[i][j] = new IloNumVar[Ni];
 						for (int k = 0; k < Ni; k++)
 							x[i][j][k] = cplex.boolVar();
 					}
 
 			// variable t
-			t = new IloNumVar[dataModel.grafo.getVertices()];
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
-				t[i] = cplex.numVar(0, maxT);
+			t = new IloNumVar[dataModel.getGrafo().getVertices()];
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
+				t[i] = cplex.numVar(0, dataModel.getMaxT());
 
 			// variable z
-			z = new IloNumVar[dataModel.grafo.getVertices()];
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
+			z = new IloNumVar[dataModel.getGrafo().getVertices()];
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
 				z[i] = cplex.boolVar();
 
 			// variable w
-			w = new IloNumVar[dataModel.grafo.getVertices()];
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
+			w = new IloNumVar[dataModel.getGrafo().getVertices()];
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
 				w[i] = cplex.boolVar();
 
-			// función objetivo.
-			// IloNumExpr fobj = cplex.linearIntExpr();
-			// fobj = cplex.sum(fobj, cplex.prod(pesoT, t[v0]));
-
-			// obj = cplex.linearIntExpr();
+			// función objetivo vacía
+			// vamos a dar la expresión de la f.obj. en el método setObjective()
 			obj = cplex.addMinimize();
 
-			varsEnFobj = new IloNumVar[dataModel.grafo.getVertices() + dataModel.V0.size()];
-
-			int l = 0;
-			for (int v0 : dataModel.V0)
-				varsEnFobj[l++] = t[v0];
-
-			for (int i = 0; i < dataModel.grafo.getVertices(); i++)
-				varsEnFobj[l + i] = z[i];
-
 			// constraints
-			ArrayList<IloRange> restricciones = new ArrayList<IloRange>();
 
 			// restricción (30)
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
-				for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++) {
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
+				for (int k = 0; k < dataModel.getGrafo().getVecinos(i).size(); k++) {
 					IloNumExpr lhs = cplex.linearIntExpr();
-					for (int j : dataModel.grafo.getVecinos(i))
+					for (int j : dataModel.getGrafo().getVecinos(i))
 						lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
-					restricciones.add(cplex.addLe(lhs, 1));
+					cplex.addLe(lhs, 1);
 				}
 
 			// restricción (31)
-			double M = Math.pow(dataModel.grafo.getVertices(), 3);
-
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
-				for (int j = 0; j < dataModel.grafo.getVertices(); ++j)
-					if (i != j && dataModel.grafo.isArista(i, j)) {
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
+				for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
+					if (i != j && dataModel.getGrafo().isArista(i, j)) {
 						IloNumExpr lhs = cplex.linearIntExpr();
 						lhs = cplex.sum(lhs, cplex.prod(1.0, t[i]));
 
-						for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++)
+						for (int k = 0; k < dataModel.getGrafo().getVecinos(i).size(); k++)
 							lhs = cplex.sum(lhs, cplex.prod(-(k + 1), x[i][j][k]));
 
 						lhs = cplex.sum(lhs, cplex.prod(-1.0, t[j]));
 
-						for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++)
-							lhs = cplex.sum(lhs, cplex.prod(-M, x[i][j][k]));
+						for (int k = 0; k < dataModel.getGrafo().getVecinos(i).size(); k++)
+							lhs = cplex.sum(lhs, cplex.prod(-dataModel.getM(), x[i][j][k]));
 
-						// lhs = cplex.sum(lhs, cplex.prod(-M, y[i][j]));
-
-						restricciones.add(cplex.addGe(lhs, -M));
+						cplex.addGe(lhs, -dataModel.getM());
 					}
 
 			// restricción (32)
-			for (int i = 0; i < dataModel.grafo.getVertices(); ++i)
-				if (!dataModel.V0.contains(i))
-					for (int j = 0; j < dataModel.grafo.getVertices(); ++j)
-						if (i != j && dataModel.grafo.isArista(i, j))
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
+				if (!dataModel.getV0().contains(i))
+					for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
+						if (i != j && dataModel.getGrafo().isArista(i, j))
 							this.addConstraint32(i, j);
 
-			// IloNumExpr lhs = cplex.linearIntExpr();
-			//
-			// for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++)
-			// lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
-			//
-			// for (int v : dataModel.grafo.getVecinos(i))
-			// for (int k = 0; k < dataModel.grafo.getVecinos(v).size(); k++)
-			// lhs = cplex.sum(lhs, cplex.prod(-1.0, x[v][i][k]));
-			//
-			// restricciones.add(cplex.addLe(lhs, 0));
-
 			// restricción (33)
-			for (int j = 0; j < dataModel.grafo.getVertices(); ++j)
-				if (!dataModel.V0.contains(j))
+			for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
+				if (!dataModel.getV0().contains(j))
 					this.addConstraint33(j);
-			// IloNumExpr lhs = cplex.linearIntExpr();
-			//
-			// lhs = cplex.sum(lhs, cplex.prod(-1.0, z[j]));
-			//
-			// for (int i : dataModel.grafo.getVecinos(j))
-			// for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++)
-			// lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
-			//
-			// restricciones.add(cplex.addEq(lhs, 0));
 
 			// restricción (34)
-			for (int v0 : dataModel.V0)
+			for (int v0 : dataModel.getV0())
 				this.addConstraint34(v0);
-			// {
-			// IloNumExpr lhs = cplex.linearIntExpr();
-			// lhs = cplex.sum(lhs, cplex.prod(1.0, t[v0]));
-			// lhs = cplex.sum(lhs, cplex.prod(-M, w[v0]));
-			// restricciones.add(cplex.addLe(lhs, 0));
-			// }
 
 			// restricción (35)
 			// lo hacemos para todos los vértices y no para los del V0 inicial así no hay
 			// que modificarla
 			// dinámicamente.
 			IloNumExpr lhs = cplex.linearIntExpr();
-			for (int v = 0; v < dataModel.grafo.getVertices(); v++)
+			for (int v = 0; v < dataModel.getGrafo().getVertices(); v++)
 				lhs = cplex.sum(lhs, cplex.prod(1.0, w[v]));
-			restricciones.add(cplex.addEq(lhs, 1));
-
-			rng[0] = new IloRange[restricciones.size()];
-
-			int tr = 0;
-			for (IloRange range : restricciones)
-				rng[0][tr++] = range;
+			cplex.addEq(lhs, 1);
 
 		} catch (IloException e) {
 			e.printStackTrace();
@@ -243,7 +195,7 @@ public final class ExactPricingProblemSolverMultipleV0
 				} else if (cplex.getStatus() == IloCplex.Status.Infeasible) {
 
 					pricingProblemInfeasible = true;
-					this.objective = Double.MAX_VALUE;
+					this.objective = Double.MIN_VALUE;
 					throw new RuntimeException("Pricing problem infeasible");
 				} else {
 					throw new RuntimeException("Pricing problem solve failed! Status: " + cplex.getStatus());
@@ -253,22 +205,24 @@ public final class ExactPricingProblemSolverMultipleV0
 				this.objective = cplex.getObjValue();
 
 				// podemos agregar el resultado a la base?
-				if (objective > 0 + config.PRECISION) {
-
+				if (objective <= 0 - config.PRECISION) {
+					// SI
 					// si es así, agregamos una nueva columna representada por ese árbol a la base
-
 					double t_v0 = 0;
-					for (int v0 = 0; v0 < dataModel.grafo.getVertices(); v0++)
+					for (int v0 = 0; v0 < dataModel.getGrafo().getVertices(); v0++)
 						if (cplex.getValue(w[v0]) > 1 - config.PRECISION)
 							t_v0 = cplex.getValue(t[v0]); // Get the variable
 
 					// Creamos el árbol.
+					int v0 = -1;
 					Set<Integer> vertices = new HashSet<Integer>();
-					for (int v = 0; v < dataModel.grafo.getVertices(); v++)
-						if (cplex.getValue(z[v]) > 1 - config.PRECISION)
+					for (int v = 0; v < dataModel.getGrafo().getVertices(); v++)
+						if (cplex.getValue(z[v]) > 1 - config.PRECISION) {
 							vertices.add(v);
+							v0 = v;
+						}
 
-					Arbol columna = new Arbol(pricingProblem, false, this.getName(), vertices, t_v0);
+					Arbol columna = new Arbol(pricingProblem, false, this.getName(), vertices, v0, t_v0);
 
 					newPatterns.add(columna);
 				}
@@ -281,22 +235,34 @@ public final class ExactPricingProblemSolverMultipleV0
 	}
 
 	/**
-	 * Update the objective function of the pricing problem with the new dual
-	 * information. The dual values are stored in the pricing problem.
+	 * Actualizamos la función objetivo del problema con la nueva solución dual que
+	 * viene del master.
 	 */
 	@Override
 	public void setObjective() {
 
 		try {
-			obj.setExpr(cplex.scalProd(pricingProblem.dualCosts, this.varsEnFobj));
+
+			// nos fijamos las variables que tienen que ir en la función objetivo.
+			IloNumVar[] varsEnFobj = new IloNumVar[dataModel.getGrafo().getVertices() + dataModel.getV0().size()];
+
+			int l = 0;
+			for (int v0 : dataModel.getV0())
+				varsEnFobj[l++] = t[v0];
+
+			for (int i = 0; i < dataModel.getGrafo().getVertices(); i++)
+				varsEnFobj[l + i] = z[i];
+
+			// y le ponemos las variables duales como costos.
+			obj.setExpr(cplex.scalProd(pricingProblem.dualCosts, varsEnFobj));
 		} catch (IloException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}		
+		}
 	}
 
 	/**
-	 * Close the pricing problem
+	 * Cerrar el problema de pricing.
 	 */
 	@Override
 	public void close() {
@@ -314,52 +280,54 @@ public final class ExactPricingProblemSolverMultipleV0
 	public void branchingDecisionPerformed(BranchingDecision bd) {
 		try {
 
-			int origen = ((MBTBranchingDecision) bd).getArista().getV1();
-			int destino = ((MBTBranchingDecision) bd).getArista().getV2();
-			int offsetOrigen = ((MBTBranchingDecision) bd).getOffsetOrigen();
-			int offsetDestino = ((MBTBranchingDecision) bd).getOffsetDestino();
+			// modificamos el V0 y el offser según la decisión del branch.
+			MBTBranchingDecision decision = (MBTBranchingDecision) bd;
+			int origen = decision.getArista().getV1();
+			int destino = decision.getArista().getV2();
+
+			// agregamos el destino a V0
+			this.dataModel.getV0().add(destino);
+
+			// y el offset del origen aumenta en uno
+			this.dataModel.getOffset()[origen]++;
+
+			// el offset del destino es del origen.
+			this.dataModel.getOffset()[destino] = this.dataModel.getOffset()[origen];
 
 			// ahora destino pasa a estar en V0
-
-			// Tenemos que agregar a destino a V0
-			this.V0.add(destino);
-
 			// así que ahora, para todos sus vecinos fuera de V0, deja de aplicar el
 			// constraint 32
-			for (int v : dataModel.grafo.getVecinos(destino))
-				if (!this.V0.contains(v)) {
-					this.removeConstraint32(destino, v);
-					this.removeConstraint32(v, destino);
+			Set<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);			
+			for (AristaDirigida arista : aristasIncidentes)
+				if (!this.dataModel.getV0().contains(arista.getV2())) {
+					this.removeConstraint32(destino, arista.getV2());
+					this.removeConstraint32(arista.getV2(), destino);
 				}
 
-			// lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino no estaba en V0
-			// ahora sí.
+			// lo mismo pasa con la desigualdad 33, antes aplicaba porque j=destino
+			// no estaba en V0 y
+			// ahora ya no.
 			this.removeConstraint33(destino);
 
-			// y la desigualdad 34 ahora aparece.
+			// y la desigualdad 34 pasa a valer, porque destino está en V0.
 			this.addConstraint34(destino);
 
-			// y lo mismo la de offset para el origen
-			//si el offset origen es > 1, seguro origen tenía un constraint anterior
-			if (offsetOrigen > 1)
-				this.removeConstraintOffset(origen);
-			
-			this.addConstraintOffset(origen, offsetOrigen);
-			
-			//pero eso no puede pasar para destino, porque antes no estaba en V0
-			this.addConstraintOffset(destino, offsetDestino);
+			// y lo mismo la de offset
+			this.addConstraintOffset(destino);
 
-			// y lo mismo la de offset para el destino
-			this.addConstraintOffset(destino, offsetOrigen);			
+			// actualizamos el constraint de offset para el origen, porque cambió.
+			this.removeConstraintOffset(origen);
+			this.addConstraintOffset(origen);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 
 	/**
-	 * When the Branch-and-Price algorithm backtracks, branching decisions are
-	 * reversed.
+	 * Volvemos atrás la decisión de branchear (cuando hacemos el backtracking)
+	 * 
 	 * 
 	 * @param bd
 	 *            BranchingDecision
@@ -367,28 +335,34 @@ public final class ExactPricingProblemSolverMultipleV0
 	@Override
 	public void branchingDecisionReversed(BranchingDecision bd) {
 		try {
-			int origen = ((MBTBranchingDecision) bd).getArista().getV1();
-			int destino = ((MBTBranchingDecision) bd).getArista().getV2();
-			int offsetOrigen = ((MBTBranchingDecision) bd).getOffsetOrigen();
+			MBTBranchingDecision decision = (MBTBranchingDecision) bd;
+			int origen = decision.getArista().getV1();
+			int destino = decision.getArista().getV2();
 
-			// ahora destino ya no está más en V0
+			// el destino se va de V0, porque lo pusimos en la decisión de branching que
+			// estamos revirtiendo.
+			this.dataModel.getV0().remove(destino);
+			this.dataModel.getOffset()[destino] = 0;
 
-			// Tenemos que sacar al destino de V0
-			this.V0.remove(destino);
+			// el origen va a tener el valor de offset que estaba en la decisión menos 1.
+			this.dataModel.getOffset()[origen]--;
+			if (this.dataModel.getOffset()[origen] < 0)
+				throw new IllegalStateException("No puede ser que el valor de offset de un vértice sea negativo");
 
 			// así que ahora, para todos sus vecinos fuera de V0, aplica el constraint 32
-			Set<AristaDirigida> aristasIncidentes = dataModel.grafo.getAristasIncidentes(destino);
+			Set<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
 			// entonces se lo agregamos.
 			for (AristaDirigida arista : aristasIncidentes)
-				if (!this.V0.contains(arista.getV2()))
+				if (!this.dataModel.getV0().contains(arista.getV2())) {
 					this.addConstraint32(destino, arista.getV2());
+					this.addConstraint32(arista.getV2(), destino);
+				}
 
-			// lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino.vertex
-			// estaba en V0 y
-			// ahora sí.
+			// lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino
+			// estaba en V0 y ahora sí porque deja de estar.
 			this.addConstraint33(destino);
 
-			// y la desigualdad 34 deja de ser necesaria.
+			// y la desigualdad 34 deja de ser necesaria, ya no está en V0
 			this.removeConstraint34(destino);
 
 			// y lo mismo la de offset
@@ -396,9 +370,35 @@ public final class ExactPricingProblemSolverMultipleV0
 
 			// ahora, el offset del origen, si revertimos el branch, tenemos que dejarlo en
 			// 1 menos que el que tenía.
-			this.removeConstraintOffset(origen);
-			if (offsetOrigen > 1)
-				this.addConstraintOffset(origen, --offsetOrigen);
+			// si el offset quedó en 0 y no está en el V0 original, lo sacamos.
+			if (this.dataModel.getOffset()[origen] == 0 && !this.dataModel.getInitialV0().contains(origen)) {
+				this.dataModel.getV0().remove(origen);
+				// si sacamos el origen de V0, eso tiene impacto en las desigualdades.
+
+				Set<AristaDirigida> aristasIncid = dataModel.getGrafo().getAristasIncidentes(origen);
+				// entonces se lo agregamos.
+				for (AristaDirigida arista : aristasIncid)
+					if (!this.dataModel.getV0().contains(arista.getV2())) {
+						this.addConstraint32(origen, arista.getV2());
+						this.addConstraint32(arista.getV2(), origen);
+					}
+
+				// lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino
+				// estaba en V0 y ahora sí porque deja de estar.
+				this.addConstraint33(origen);
+
+				// y la desigualdad 34 deja de ser necesaria, ya no está en V0
+				this.removeConstraint34(origen);
+
+				// y lo mismo la de offset
+				this.removeConstraintOffset(origen);
+			}
+
+			else {
+				// actualizamos el offset del origen
+				this.removeConstraintOffset(origen);
+				this.addConstraintOffset(origen);
+			}
 
 		} catch (IloException e) {
 			e.printStackTrace();
@@ -416,16 +416,16 @@ public final class ExactPricingProblemSolverMultipleV0
 
 		IloNumExpr lhs = cplex.linearIntExpr();
 
-		for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++)
+		for (int k = 0; k < dataModel.getGrafo().getVecinos(i).size(); k++)
 			lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
-		for (int v : dataModel.grafo.getVecinos(i))
-			for (int k = 0; k < dataModel.grafo.getVecinos(v).size(); k++)
+		for (int v : dataModel.getGrafo().getVecinos(i))
+			for (int k = 0; k < dataModel.getGrafo().getVecinos(v).size(); k++)
 				lhs = cplex.sum(lhs, cplex.prod(-1.0, x[v][i][k]));
 
 		IloConstraint nuevoConstraint = cplex.addLe(lhs, 0);
 
-		AristaDirigida arista = dataModel.grafo.getArista(i, j);
+		AristaDirigida arista = dataModel.getGrafo().getArista(i, j);
 		if (this.constraints32.containsKey(arista))
 			throw new RuntimeException("El constraint 32 ya existe para la arista " + i + " " + j);
 
@@ -441,10 +441,10 @@ public final class ExactPricingProblemSolverMultipleV0
 	 */
 	private void removeConstraint32(int i, int j) throws IloException {
 
-		if (!this.constraints32.containsKey(i))
+		if (!this.constraints32.containsKey(dataModel.getGrafo().getArista(i, j)))
 			throw new RuntimeException("El constraint 32 no existe para la arista " + i + " " + j);
 
-		AristaDirigida arista = dataModel.grafo.getArista(i, j);
+		AristaDirigida arista = dataModel.getGrafo().getArista(i, j);
 		cplex.remove(this.constraints32.get(arista));
 		this.constraints32.remove(arista);
 	}
@@ -461,8 +461,8 @@ public final class ExactPricingProblemSolverMultipleV0
 
 		lhs = cplex.sum(lhs, cplex.prod(-1.0, z[j]));
 
-		for (int i : dataModel.grafo.getVecinos(j))
-			for (int k = 0; k < dataModel.grafo.getVecinos(i).size(); k++)
+		for (int i : dataModel.getGrafo().getVecinos(j))
+			for (int k = 0; k < dataModel.getGrafo().getVecinos(i).size(); k++)
 				lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
 		if (this.constraints33.containsKey(j))
@@ -496,7 +496,7 @@ public final class ExactPricingProblemSolverMultipleV0
 
 		IloNumExpr lhs = cplex.linearIntExpr();
 		lhs = cplex.sum(lhs, cplex.prod(1.0, t[j]));
-		lhs = cplex.sum(lhs, cplex.prod(-dataModel.M, w[j]));
+		lhs = cplex.sum(lhs, cplex.prod(-dataModel.getM(), w[j]));
 
 		if (this.constraints34.containsKey(j))
 			throw new RuntimeException("El constraint 34 ya existe para el vértice " + j);
@@ -525,11 +525,11 @@ public final class ExactPricingProblemSolverMultipleV0
 	 * @param j
 	 * @throws IloException
 	 */
-	private void addConstraintOffset(int i, int offset) throws IloException {
+	private void addConstraintOffset(int i) throws IloException {
 
 		IloNumExpr lhs = cplex.linearIntExpr();
-		for (int k = 0; k < offset; k++)
-			for (int j : dataModel.grafo.getVecinos(i))
+		for (int k = 0; k < dataModel.getOffset()[i]; k++)
+			for (int j : dataModel.getGrafo().getVecinos(i))
 				lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
 		if (this.constraintsOffset.containsKey(i))
