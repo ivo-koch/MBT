@@ -1,9 +1,14 @@
 package util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import mbt.branch.and.price.Arbol;
 
 public class Grafo {
 
@@ -17,11 +22,11 @@ public class Grafo {
 			this.v1 = v1;
 			this.v2 = v2;
 		}
-		
+
 		public int getV1() {
 			return v1;
 		}
-		
+
 		public int getV2() {
 			return v2;
 		}
@@ -60,6 +65,83 @@ public class Grafo {
 
 	}
 
+	public static class Builder {
+
+		private boolean[][] aristas;
+		private int n;
+
+		public Builder(int n) {
+			this.n = n;
+			aristas = new boolean[n][n];
+		}
+
+		public Builder setArista(int i, int j) {
+			aristas[i][j] = true;
+			aristas[j][i] = true;
+			return this;
+		}
+
+		public boolean isArista(int i, int j) {
+			return aristas[i][j];
+		}
+
+		public int getN() {
+			return n;
+		}
+
+		public Grafo build() {
+			return new Grafo(this);
+		}
+	}
+
+	// Constructor
+	private Grafo(Builder b) {
+
+		this.n = b.getN();
+		this.aristas = new boolean[n][n];
+
+		for (int i = 0; i < n; ++i)
+			for (int j = i + 1; j < n; ++j)
+				if (b.isArista(i, j))
+					this.setArista(i, j);
+
+	}
+
+	public Arbol bfs(Set<Integer> V0) {
+
+		int vn = this.getVertices();
+		Arbol.Builder builder = new Arbol.Builder(this.getVertices(), vn);
+
+		List<Integer> res = new ArrayList<Integer>();
+
+		boolean visited[] = new boolean[this.getVertices()];
+
+		// Create a queue for BFS
+		LinkedList<Integer> queue = new LinkedList<Integer>();
+
+		for (int v0 : V0) {
+			// Mark the current node as visited and enqueue it
+			visited[v0] = true;
+			queue.add(v0);
+		}
+
+		while (queue.size() != 0) {
+			// Desencolamos el primero de la cola.
+			int s = queue.poll();
+
+			Set<Integer> hijos = getVecinos(s);
+
+			for (int h : hijos) {
+				if (!visited[h]) {
+					visited[h] = true;
+					queue.add(h);
+				}
+			}
+		}
+		return builder.buildArbol();
+
+	}
+
 	// Cantidad de aristas
 	private int n;
 
@@ -86,7 +168,7 @@ public class Grafo {
 	// Aristas
 	private boolean[][] aristas;
 
-	private Map<Integer, Set<AristaDirigida>> verticesConAristas = new HashMap<Integer, Set<AristaDirigida>>();
+	private Map<Integer, List<AristaDirigida>> verticesConAristas = new HashMap<Integer, List<AristaDirigida>>();
 
 	public Set<Integer> getVecinos(int v) {
 		Set<Integer> res = new HashSet<Integer>();
@@ -98,31 +180,17 @@ public class Grafo {
 		return res;
 	}
 
-	
 	public AristaDirigida getArista(int i, int v) {
-		for (AristaDirigida arista: getAristasIncidentes(i))
+		for (AristaDirigida arista : getAristasIncidentes(i))
 			if (arista.v2 == v)
 				return arista;
-		
+
 		throw new RuntimeException("La arista no existe");
 	}
-	
-	public Set<AristaDirigida> getAristasIncidentes(int v) {
+
+	public List<AristaDirigida> getAristasIncidentes(int v) {
 		return verticesConAristas.get(v);
 	}
-
-	// public Grafo aumentar(int vertices) {
-	//
-	// Grafo g = new Grafo(this.getVertices() + vertices);
-	//
-	// for (int i = 0; i < this.getVertices(); ++i)
-	// for (int j = i + 1; j < this.getVertices(); ++j)
-	// if (this.isArista(i, j))
-	// g.setArista(i, j);
-	//
-	// return g;
-	//
-	// }
 
 	public int getAristas() {
 
@@ -182,10 +250,10 @@ public class Grafo {
 	}
 
 	private void addArista(int i, int j) {
-		Set<AristaDirigida> set;
+		List<AristaDirigida> set;
 
 		if (!verticesConAristas.containsKey(i))
-			set = new HashSet<AristaDirigida>();
+			set = new ArrayList<AristaDirigida>();
 		else
 			set = verticesConAristas.get(i);
 

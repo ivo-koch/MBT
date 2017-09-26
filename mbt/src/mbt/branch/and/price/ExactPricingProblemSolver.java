@@ -25,7 +25,7 @@ import util.Grafo.AristaDirigida;
 /***
  * Implementación de solución exacta para el problema de pricing.
  */
-public final class ExactPricingProblemSolver extends AbstractPricingProblemSolver<DataModel, Arbol, MBTPricingProblem> {
+public final class ExactPricingProblemSolver extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem> {
 
 	private IloCplex cplex; // Cplex instance.
 	private IloObjective obj; // Objective function
@@ -226,8 +226,8 @@ public final class ExactPricingProblemSolver extends AbstractPricingProblemSolve
 	 *             TimeLimitExceededException
 	 */
 	@Override
-	public List<Arbol> generateNewColumns() throws TimeLimitExceededException {
-		List<Arbol> newPatterns = new ArrayList<>();
+	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {
+		List<MBTColumn> newPatterns = new ArrayList<>();
 		try {
 			// Límite de tiempo.
 			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
@@ -267,10 +267,10 @@ public final class ExactPricingProblemSolver extends AbstractPricingProblemSolve
 					for (int v = 0; v < dataModel.getGrafo().getVertices(); v++)
 						if (cplex.getValue(z[v]) > 1 - config.PRECISION)
 							vertices.add(v);
+		
+					//MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(), vertices, v0Raiz, t_v0);
 
-					Arbol columna = new Arbol(pricingProblem, false, this.getName(), vertices, v0Raiz, t_v0);
-
-					newPatterns.add(columna);
+					//newPatterns.add(columna);
 				}
 			}
 
@@ -331,7 +331,7 @@ public final class ExactPricingProblemSolver extends AbstractPricingProblemSolve
 			// ahora destino pasa a estar en V0
 			// así que ahora, para todos sus vecinos fuera de V0, deja de aplicar el
 			// constraint 32
-			Set<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
+			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
 			// entonces se lo agregamos.
 			for (AristaDirigida arista : aristasIncidentes)
 				if (!this.dataModel.getV0().contains(arista.getV2()))
@@ -383,7 +383,7 @@ public final class ExactPricingProblemSolver extends AbstractPricingProblemSolve
 				throw new IllegalStateException("No puede ser que el valor de offset de un vértice sea negativo");
 
 			// así que ahora, para todos sus vecinos fuera de V0, aplica el constraint 32
-			Set<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
+			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
 			// entonces se lo agregamos.
 			for (AristaDirigida arista : aristasIncidentes)
 				if (!this.dataModel.getV0().contains(arista.getV2()))
@@ -406,7 +406,7 @@ public final class ExactPricingProblemSolver extends AbstractPricingProblemSolve
 				this.dataModel.getV0().remove(origen);
 				// si sacamos el origen de V0, eso tiene impacto en las desigualdades.
 
-				Set<AristaDirigida> aristasIncid = dataModel.getGrafo().getAristasIncidentes(origen);
+				List<AristaDirigida> aristasIncid = dataModel.getGrafo().getAristasIncidentes(origen);
 				// entonces se lo agregamos.
 				for (AristaDirigida arista : aristasIncid)
 					if (!this.dataModel.getV0().contains(arista.getV2()))

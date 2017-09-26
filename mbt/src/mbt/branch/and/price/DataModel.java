@@ -3,6 +3,7 @@ package mbt.branch.and.price;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.jorlib.frameworks.columnGeneration.model.ModelInterface;
 
@@ -19,6 +20,7 @@ public class DataModel implements ModelInterface {
 
 	/*** El grafo ***/
 	private final Grafo grafo;
+	
 	/*** El V0, que va a cambiar dinámicamente en el branching **/
 	private final Set<Integer> V0;
 	/*** El V0 inicial, no cambia nunca. **/
@@ -34,11 +36,12 @@ public class DataModel implements ModelInterface {
 
 	public DataModel(Grafo g, Set<Integer> V0) {
 		this.grafo = g;
-		this.V0 = new HashSet<Integer>(V0);
-		this.initialV0 = new HashSet<Integer>(V0);
+		//es un treeset porque quiero que me los devuelve siempre en el mismo orrden.
+		this.V0 = new TreeSet<Integer>(V0);
+		this.initialV0 = new TreeSet<Integer>(V0);
 		this.offset = new int[this.getGrafo().getVertices()];
 		this.maxT = g.getVertices() - 1;
-		this.M = Math.pow(g.getVertices(), 3);
+		this.M = Math.pow(g.getVertices(), 3);			
 	}
 
 	@Override

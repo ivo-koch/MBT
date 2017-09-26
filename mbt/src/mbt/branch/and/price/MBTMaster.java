@@ -25,7 +25,7 @@ import ilog.cplex.IloCplex;
  * Esta clase define el problema master.
  * 
  */
-public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricingProblem, MBTMasterData> {
+public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPricingProblem, MBTMasterData> {
 
 	private IloObjective obj; // Función objetivo.
 	private IloRange[] costLessThanH; // Constraint
@@ -33,15 +33,8 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 
 	private IloNumVar h;
 
-	//El V0 y el offset. Esto va cambiando dinámicamente según el branching.
-	//Lo vamos actualizando en estas variables.
-	//private final Set<Integer> V0;
-	//private final int[] offset;
-
 	public MBTMaster(DataModel dataModel, Set<Integer> V0, MBTPricingProblem pricingProblem) {
 		super(dataModel, pricingProblem, OptimizationSense.MINIMIZE);
-		//this.dataModel.getV0() = new HashSet<Integer>(V0);
-		//this.dataModel.getOffset() = new int[dataModel.getGrafo().getVertices()];
 		System.out.println("Master constructor. Columns: " + masterData.getNrColumns());
 	}
 
@@ -94,9 +87,10 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 			e.printStackTrace();
 		}
 
-		Map<MBTPricingProblem, OrderedBiMap<Arbol, IloNumVar>> varMap = new LinkedHashMap<>();
+		// esto es código técnico del framework, ni lo tocamos.
+		Map<MBTPricingProblem, OrderedBiMap<MBTColumn, IloNumVar>> varMap = new LinkedHashMap<>();
 		MBTPricingProblem pricingProblem = this.pricingProblems.get(0);
-		varMap.put(pricingProblem, new OrderedBiMap<Arbol, IloNumVar>());
+		varMap.put(pricingProblem, new OrderedBiMap<MBTColumn, IloNumVar>());
 
 		return new MBTMasterData(cplex, varMap);
 	}
@@ -155,7 +149,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 			double[] dualValues = Arrays.copyOf(dualValuesRest1, dualValuesRest1.length + dualValuesRest2.length);
 			System.arraycopy(dualValuesRest2, 0, dualValues, dualValuesRest1.length, dualValuesRest2.length);
 
-			// se lo tenemos que pasar todo junto al problema de pricing.			
+			// se lo tenemos que pasar todo junto al problema de pricing.
 			pricingProblem.initPricingProblem(dualValues);
 
 		} catch (IloException e) {
@@ -170,7 +164,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 	 * 
 	 */
 	@Override
-	public void addColumn(Arbol column) {
+	public void addColumn(MBTColumn column) {
 		try {
 			// Registramos una columna (un nuevo árbol T) con coeficiente 0 en
 			// la función objetivo
@@ -178,12 +172,13 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 
 			// Registramos la columna con los primeros constraints, si este T
 			// comienza en un v0
-			if (dataModel.getV0().contains(column.getRoot()))
-				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH[column.getRoot()], column.getT()));
+			if (dataModel.getV0().contains(column.getArbol().getRoot()))
+				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH[column.getArbol().getRoot()],
+						column.getArbol().getCosto()));
 
-			// Registramos la columna con los primeros constraints, para los
+			// Registramos la columna con los segundos constraints, para los
 			// vértices que conforman a T
-			for (Integer vertex : column.getVertices())
+			for (Integer vertex : column.getArbol().getInternalNodes())
 				iloColumn = iloColumn.and(masterData.cplex.column(this.vertexBelongsToOneTree[vertex], 1.0));
 
 			// Creamos la variable
@@ -200,11 +195,11 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 	 * @return Devuelve todas las columnas distintas de 0
 	 */
 	@Override
-	public List<Arbol> getSolution() {
-		List<Arbol> solution = new ArrayList<>();
+	public List<MBTColumn> getSolution() {
+		List<MBTColumn> solution = new ArrayList<>();
 		try {
-			Arbol[] arbolesEnLaSolucion = masterData.getColumnsForPricingProblemAsList()
-					.toArray(new Arbol[masterData.getNrColumns()]);
+			MBTColumn[] arbolesEnLaSolucion = masterData.getColumnsForPricingProblemAsList()
+					.toArray(new MBTColumn[masterData.getNrColumns()]);
 			IloNumVar[] vars = masterData.getVarMap().getValuesAsArray(new IloNumVar[masterData.getNrColumns()]);
 			double[] values = masterData.cplex.getValues(vars);
 			for (int i = 0; i < arbolesEnLaSolucion.length; i++) {
@@ -223,8 +218,8 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 	 */
 	@Override
 	public void printSolution() {
-		List<Arbol> solution = this.getSolution();
-		for (Arbol is : solution)
+		List<MBTColumn> solution = this.getSolution();
+		for (MBTColumn is : solution)
 			System.out.println(is);
 	}
 
@@ -258,6 +253,6 @@ public final class MBTMaster extends AbstractMaster<DataModel, Arbol, MBTPricing
 	 */
 	@Override
 	public void branchingDecisionReversed(BranchingDecision bd) {
-		//No hacemos nada en el master si backtrackeamos.
+		// No hacemos nada en el master si backtrackeamos.
 	}
 }

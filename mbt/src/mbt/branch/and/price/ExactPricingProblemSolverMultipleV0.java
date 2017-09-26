@@ -2,6 +2,7 @@ package mbt.branch.and.price;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +26,7 @@ import util.Grafo.AristaDirigida;
  * varios vértices.
  */
 public final class ExactPricingProblemSolverMultipleV0
-		extends AbstractPricingProblemSolver<DataModel, Arbol, MBTPricingProblem> {
+		extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem> {
 
 	/*** Instancia de cplex **/
 	private IloCplex cplex;
@@ -181,8 +182,8 @@ public final class ExactPricingProblemSolverMultipleV0
 	 *             TimeLimitExceededException
 	 */
 	@Override
-	public List<Arbol> generateNewColumns() throws TimeLimitExceededException {
-		List<Arbol> newPatterns = new ArrayList<>();
+	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {
+		List<MBTColumn> newPatterns = new ArrayList<>();
 		try {
 			// Límite de tiempo.
 			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
@@ -208,26 +209,36 @@ public final class ExactPricingProblemSolverMultipleV0
 				if (objective <= 0 - config.PRECISION) {
 					// SI
 					// si es así, agregamos una nueva columna representada por ese árbol a la base
-					double t_v0 = 0;
-					for (int v0 = 0; v0 < dataModel.getGrafo().getVertices(); v0++)
-						if (cplex.getValue(w[v0]) > 1 - config.PRECISION)
-							t_v0 = cplex.getValue(t[v0]); // Get the variable
-
-					// Creamos el árbol.
+					int t_v0 = 0;
 					int v0 = -1;
-					Set<Integer> vertices = new HashSet<Integer>();
 					for (int v = 0; v < dataModel.getGrafo().getVertices(); v++)
-						if (cplex.getValue(z[v]) > 1 - config.PRECISION) {
-							vertices.add(v);
+						if (cplex.getValue(w[v]) > 1 - config.PRECISION) {
+							t_v0 = (int) Math.round(cplex.getValue(t[v]));
 							v0 = v;
 						}
 
-					Arbol columna = new Arbol(pricingProblem, false, this.getName(), vertices, v0, t_v0);
+					// Creamos el árbol.
+					Arbol.Builder builder = new Arbol.Builder(dataModel.getGrafo().getVertices(), v0);
 
-					newPatterns.add(columna);
+					LinkedList<Integer> vertices = new LinkedList<Integer>();
+					vertices.add(v0);
+
+					while (!vertices.isEmpty()) {
+						int v = vertices.poll();
+						for (int w : dataModel.getGrafo().getVecinos(v))
+							for (int k = 0; k < dataModel.getGrafo().getVecinos(v).size(); k++)
+								if (cplex.getValue(x[v][w][k]) > 1 - config.PRECISION && !builder.contains(w)) {
+									builder.addVertex(w, v);
+									vertices.add(w);
+								}
+
+						MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(), builder.buildArbol(t_v0));
+
+						newPatterns.add(columna);
+					}
+
 				}
 			}
-
 		} catch (IloException e) {
 			e.printStackTrace();
 		}
@@ -291,13 +302,16 @@ public final class ExactPricingProblemSolverMultipleV0
 			// y el offset del origen aumenta en uno
 			this.dataModel.getOffset()[origen]++;
 
+			if (this.dataModel.getOffset()[origen] > this.dataModel.getMaxT())
+				throw new IllegalStateException("No podemos branchear con un t mayor a maxT!");
+
 			// el offset del destino es del origen.
 			this.dataModel.getOffset()[destino] = this.dataModel.getOffset()[origen];
 
 			// ahora destino pasa a estar en V0
 			// así que ahora, para todos sus vecinos fuera de V0, deja de aplicar el
 			// constraint 32
-			Set<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);			
+			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
 			for (AristaDirigida arista : aristasIncidentes)
 				if (!this.dataModel.getV0().contains(arista.getV2())) {
 					this.removeConstraint32(destino, arista.getV2());
@@ -350,7 +364,7 @@ public final class ExactPricingProblemSolverMultipleV0
 				throw new IllegalStateException("No puede ser que el valor de offset de un vértice sea negativo");
 
 			// así que ahora, para todos sus vecinos fuera de V0, aplica el constraint 32
-			Set<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
+			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
 			// entonces se lo agregamos.
 			for (AristaDirigida arista : aristasIncidentes)
 				if (!this.dataModel.getV0().contains(arista.getV2())) {
@@ -375,7 +389,7 @@ public final class ExactPricingProblemSolverMultipleV0
 				this.dataModel.getV0().remove(origen);
 				// si sacamos el origen de V0, eso tiene impacto en las desigualdades.
 
-				Set<AristaDirigida> aristasIncid = dataModel.getGrafo().getAristasIncidentes(origen);
+				List<AristaDirigida> aristasIncid = dataModel.getGrafo().getAristasIncidentes(origen);
 				// entonces se lo agregamos.
 				for (AristaDirigida arista : aristasIncid)
 					if (!this.dataModel.getV0().contains(arista.getV2())) {

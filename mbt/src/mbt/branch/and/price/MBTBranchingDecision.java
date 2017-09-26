@@ -6,52 +6,40 @@ import org.jorlib.frameworks.columnGeneration.master.cutGeneration.AbstractInequ
 import util.Grafo.AristaDirigida;
 
 /**
- * Una decisión de branching para nosotros es:
- * Vamos del vértice origen de la arista al destino.
- * Entonces el offset del origen va a ser la variable offsetOrigen
- * y el offset del destino va a ser offsetDestino.
+ * Una decisión de branching para nosotros es: Vamos del vértice origen (que debe estar en V0) de la
+ * arista al destino.
  */
-public final class MBTBranchingDecision implements BranchingDecision<DataModel, Arbol> {
+public final class MBTBranchingDecision implements BranchingDecision<DataModel, MBTColumn> {
 
+	/***la arista por la cual brancheamos ***/
 	private final AristaDirigida arista;
-	//private final int offsetOrigen;
-	//private final int offsetDestino;
-	
 
-	public MBTBranchingDecision(AristaDirigida arista) {
+	public MBTBranchingDecision(AristaDirigida arista) {		
 		this.arista = arista;
-		//this.offsetOrigen = offsetOrigen;
-		//this.offsetDestino = offsetDestino;
 	}
 
 	public AristaDirigida getArista() {
 		return arista;
 	}
-//
-//	public int getOffsetOrigen() {
-//		return offsetOrigen;
-//	}
-//
-//	public int getOffsetDestino() {
-//		return offsetDestino;
-//	}
 
 	/**
-	 * Determina si una columna es compatible con el branching actual.
-	 * Es compatible si el árbol que nos pasan NO tiene el vértice destino, 
-	 * porque quiere decir que salió desde otro v0.
+	 * Determina si una columna es compatible con el branching actual. Es compatible
+	 * si el árbol que nos pasan NO tiene el vértice destino (el v2 de la arista de
+	 * la variable de instancia), que ahora pasaría a estar en V0
+	 * 
 	 * 
 	 * @param column
 	 *            column
 	 * @return true
 	 */
 	@Override
-	public boolean columnIsCompatibleWithBranchingDecision(Arbol column) {
-		return !column.getVertices().contains(this.arista.getV2());
+	public boolean columnIsCompatibleWithBranchingDecision(MBTColumn column) {
+		return !column.getArbol().contains(this.arista.getV2());
 	}
 
 	/**
-	 * Determine whether the given inequality remains feasible for the child node
+	 * Determina si la desigualdad parámetro permanece válida Importa sólo para el
+	 * branch and price and cut.
 	 * 
 	 * @param inequality
 	 *            inequality
@@ -59,7 +47,7 @@ public final class MBTBranchingDecision implements BranchingDecision<DataModel, 
 	 */
 	@Override
 	public boolean inEqualityIsCompatibleWithBranchingDecision(AbstractInequality inequality) {
-		return true; // Cuts are not added in this example
+		return true;
 	}
 
 	@Override
