@@ -1,6 +1,7 @@
 package mbt.branch.and.price;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +38,6 @@ public final class ExactPricingProblemSolverMultipleV0
 	private IloNumVar[][][] x;
 	private IloNumVar[] z;
 	private IloNumVar[] t;
-	private IloNumVar[] w;
 
 	/** Mantenemos acá las variables de la función objetivo */
 	IloNumVar[] varsEnFobj;
@@ -46,16 +46,15 @@ public final class ExactPricingProblemSolverMultipleV0
 
 	/*** Diccionarios de Restricciones */
 	// indexado por la arista v0,j
-	private Map<Grafo.AristaDirigida, IloConstraint> constraints32;
+	private Map<Grafo.AristaDirigida, IloConstraint> constraints32 = new HashMap<Grafo.AristaDirigida, IloConstraint>();
 
 	// indexado por v0
-	private Map<Integer, IloConstraint> constraints33;
+	private Map<Integer, IloConstraint> constraints33 = new HashMap<Integer, IloConstraint>();
+
+	private IloConstraint constraint34;
 
 	// indexado por v0
-	private Map<Integer, IloConstraint> constraints34;
-
-	// indexado por v0
-	private Map<Integer, IloConstraint> constraintsOffset;
+	private Map<Integer, IloConstraint> constraintsOffset = new HashMap<Integer, IloConstraint>();
 
 	/***
 	 * Crea un nuevo solver de pricing.
@@ -80,10 +79,6 @@ public final class ExactPricingProblemSolverMultipleV0
 			cplex.setParam(IloCplex.IntParam.Threads, 1);
 			cplex.setOut(null);
 
-			IloCplex cplex = new IloCplex();
-
-			IloRange[][] rng = new IloRange[1][];
-
 			// variable x
 			x = new IloNumVar[dataModel.getGrafo().getVertices()][dataModel.getGrafo().getVertices()][];
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
@@ -104,11 +99,6 @@ public final class ExactPricingProblemSolverMultipleV0
 			z = new IloNumVar[dataModel.getGrafo().getVertices()];
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
 				z[i] = cplex.boolVar();
-
-			// variable w
-			w = new IloNumVar[dataModel.getGrafo().getVertices()];
-			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
-				w[i] = cplex.boolVar();
 
 			// función objetivo vacía
 			// vamos a dar la expresión de la f.obj. en el método setObjective()
@@ -157,19 +147,9 @@ public final class ExactPricingProblemSolverMultipleV0
 					this.addConstraint33(j);
 
 			// restricción (34)
-			for (int v0 : dataModel.getV0())
-				this.addConstraint34(v0);
+			this.updateConstraint34();
 
-			// restricción (35)
-			// lo hacemos para todos los vértices y no para los del V0 inicial así no hay
-			// que modificarla
-			// dinámicamente.
-			IloNumExpr lhs = cplex.linearIntExpr();
-			for (int v = 0; v < dataModel.getGrafo().getVertices(); v++)
-				lhs = cplex.sum(lhs, cplex.prod(1.0, w[v]));
-			cplex.addEq(lhs, 1);
-
-		} catch (IloException e) {
+		} catch (IloException e) {     
 			e.printStackTrace();
 		}
 	}
@@ -211,8 +191,8 @@ public final class ExactPricingProblemSolverMultipleV0
 					// si es así, agregamos una nueva columna representada por ese árbol a la base
 					int t_v0 = 0;
 					int v0 = -1;
-					for (int v = 0; v < dataModel.getGrafo().getVertices(); v++)
-						if (cplex.getValue(w[v]) > 1 - config.PRECISION) {
+					for (int v : dataModel.getV0())
+						if (cplex.getValue(z[v]) > 1 - config.PRECISION) {
 							t_v0 = (int) Math.round(cplex.getValue(t[v]));
 							v0 = v;
 						}
@@ -220,6 +200,7 @@ public final class ExactPricingProblemSolverMultipleV0
 					// Creamos el árbol.
 					Arbol.Builder builder = new Arbol.Builder(dataModel.getGrafo().getVertices(), v0);
 
+					// recorremos en bfs según las variables x_ijk, para armar el árbol.
 					LinkedList<Integer> vertices = new LinkedList<Integer>();
 					vertices.add(v0);
 
@@ -231,11 +212,11 @@ public final class ExactPricingProblemSolverMultipleV0
 									builder.addVertex(w, v);
 									vertices.add(w);
 								}
-
-						MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(), builder.buildArbol(t_v0));
-
-						newPatterns.add(columna);
 					}
+
+					MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(),
+							builder.buildArbol(t_v0, objective));
+					newPatterns.add(columna);
 
 				}
 			}
@@ -323,8 +304,8 @@ public final class ExactPricingProblemSolverMultipleV0
 			// ahora ya no.
 			this.removeConstraint33(destino);
 
-			// y la desigualdad 34 pasa a valer, porque destino está en V0.
-			this.addConstraint34(destino);
+			// actualizamos la desigualdad 34, porque cambió el V0
+			this.updateConstraint34();
 
 			// y lo mismo la de offset
 			this.addConstraintOffset(destino);
@@ -377,7 +358,7 @@ public final class ExactPricingProblemSolverMultipleV0
 			this.addConstraint33(destino);
 
 			// y la desigualdad 34 deja de ser necesaria, ya no está en V0
-			this.removeConstraint34(destino);
+			this.updateConstraint34();
 
 			// y lo mismo la de offset
 			this.removeConstraintOffset(destino);
@@ -401,8 +382,8 @@ public final class ExactPricingProblemSolverMultipleV0
 				// estaba en V0 y ahora sí porque deja de estar.
 				this.addConstraint33(origen);
 
-				// y la desigualdad 34 deja de ser necesaria, ya no está en V0
-				this.removeConstraint34(origen);
+				// actualizamos la des. 34
+				this.updateConstraint34();
 
 				// y lo mismo la de offset
 				this.removeConstraintOffset(origen);
@@ -506,31 +487,17 @@ public final class ExactPricingProblemSolverMultipleV0
 	 * @param j
 	 * @throws IloException
 	 */
-	private void addConstraint34(int j) throws IloException {
+	private void updateConstraint34() throws IloException {
+
+		if (this.constraint34 != null)
+			cplex.remove(this.constraint34);
 
 		IloNumExpr lhs = cplex.linearIntExpr();
-		lhs = cplex.sum(lhs, cplex.prod(1.0, t[j]));
-		lhs = cplex.sum(lhs, cplex.prod(-dataModel.getM(), w[j]));
 
-		if (this.constraints34.containsKey(j))
-			throw new RuntimeException("El constraint 34 ya existe para el vértice " + j);
+		for (int v0 : dataModel.getV0())
+			lhs = cplex.sum(lhs, cplex.prod(1.0, z[v0]));
 
-		this.constraints34.put(j, cplex.addLe(lhs, 0));
-	}
-
-	/***
-	 * Quito el constraint 34 para el vértice j
-	 * 
-	 * @param j
-	 * @throws IloException
-	 */
-	private void removeConstraint34(int j) throws IloException {
-
-		if (!this.constraints34.containsKey(j))
-			throw new RuntimeException("El constraint 34 no existe para el vértice  " + j);
-
-		cplex.remove(this.constraints34.get(j));
-		this.constraints34.remove(j);
+		this.constraint34 = cplex.addLe(lhs, 1);
 	}
 
 	/***

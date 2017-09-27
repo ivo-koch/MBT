@@ -16,7 +16,13 @@ public class Arbol {
 	private final int root;
 
 	/** t del árbol. **/
-	private final double costo;
+	private final int costo;
+
+	/***
+	 * Nos guardamos por las dudas el valor de la función objetivo de cuando
+	 * calculamos este árbol
+	 **/
+	private final double valorFuncionObjetivo;
 
 	/***
 	 * Usamos esto para construir un árbol correcto, con el patrón Builder
@@ -70,9 +76,9 @@ public class Arbol {
 			return new Arbol(this.vertices, this.root);
 		}
 
-		public Arbol buildArbol(int costo) {
+		public Arbol buildArbol(int costo, double valorFuncionObjetivo) {
 
-			return new Arbol(this.vertices, this.root, costo);
+			return new Arbol(this.vertices, this.root, costo, valorFuncionObjetivo);
 		}
 
 		public static Arbol buildSubarbol(Arbol arbol, int raizSubarbol) {
@@ -103,6 +109,7 @@ public class Arbol {
 		this.vertices = vertices;
 		this.root = root;
 		this.costo = calcularCosto();
+		this.valorFuncionObjetivo = Double.MAX_VALUE;
 	}
 
 	/****
@@ -112,11 +119,12 @@ public class Arbol {
 	 * @param root
 	 * @param costo
 	 */
-	private Arbol(int[] vertices, int root, int costo) {
+	private Arbol(int[] vertices, int root, int costo, double valorFuncionObjetivo) {
 
 		this.vertices = vertices;
 		this.root = root;
 		this.costo = costo;
+		this.valorFuncionObjetivo = valorFuncionObjetivo;
 	}
 
 	/***
@@ -174,7 +182,7 @@ public class Arbol {
 			int v = bfs.get(i);
 
 			List<Integer> Nv = getHijos(v);
-			if (!Nv.isEmpty()) { //las hojas están en 0 por default.
+			if (!Nv.isEmpty()) { // las hojas están en 0 por default.
 				int[] tHijos = new int[Nv.size()];
 				int j = 0;
 				for (int w : Nv)
@@ -197,6 +205,7 @@ public class Arbol {
 
 	/***
 	 * Devuelve los nodos internos de este árbol
+	 * 
 	 * @return
 	 */
 	public Set<Integer> getInternalNodes() {
@@ -204,7 +213,7 @@ public class Arbol {
 		if (vertexSet == null) {
 			vertexSet = new HashSet<Integer>();
 			for (int v = 0; v < this.vertices.length; v++)
-				if (contains(v))
+				if (contains(v) && v != root)
 					vertexSet.add(v);
 		}
 
@@ -213,7 +222,7 @@ public class Arbol {
 	}
 
 	public List<Integer> getHijos(int v) {
-		
+
 		List<Integer> hijos = new ArrayList<Integer>();
 		for (int w = 0; w < this.vertices.length; w++)
 			if (this.vertices[w] == v && w != v)
@@ -258,6 +267,10 @@ public class Arbol {
 		if (!Arrays.equals(vertices, other.vertices))
 			return false;
 		return true;
+	}
+
+	public double getValorFuncionObjetivo() {
+		return valorFuncionObjetivo;
 	}
 
 }

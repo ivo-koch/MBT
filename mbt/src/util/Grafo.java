@@ -253,9 +253,9 @@ public class Grafo {
 		List<AristaDirigida> set;
 
 		if (!verticesConAristas.containsKey(i))
-			set = new ArrayList<AristaDirigida>();
-		else
-			set = verticesConAristas.get(i);
+			verticesConAristas.put(i, new ArrayList<AristaDirigida>());
+
+		set = verticesConAristas.get(i);
 
 		set.add(new AristaDirigida(i, j));
 	}
