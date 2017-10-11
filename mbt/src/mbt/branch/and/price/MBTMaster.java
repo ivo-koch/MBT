@@ -2,11 +2,10 @@ package mbt.branch.and.price;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.TreeMap;
 
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.branchingDecisions.BranchingDecision;
 import org.jorlib.frameworks.columnGeneration.io.TimeLimitExceededException;
@@ -28,13 +27,13 @@ import ilog.cplex.IloCplex;
 public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPricingProblem, MBTMasterData> {
 
 	private IloObjective obj; // Función objetivo.
-	private IloRange[] costLessThanH; // Constraint
+	private TreeMap<Integer, IloRange> costLessThanH; // Constraint
 	private IloRange[] vertexBelongsToOneTree; // Constraint
 
 	private IloNumVar h;
 
-	public MBTMaster(DataModel dataModel, Set<Integer> V0, MBTPricingProblem pricingProblem) {
-		super(dataModel, pricingProblem, OptimizationSense.MINIMIZE);
+	public MBTMaster(DataModel dataModel, MBTPricingProblem pricingProblem) {
+		super(dataModel, pricingProblem, OptimizationSense.MAXIMIZE);
 		System.out.println("Master constructor. Columns: " + masterData.getNrColumns());
 	}
 
@@ -56,26 +55,26 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			cplex.setParam(IloCplex.IntParam.Threads, config.MAXTHREADS);
 
 			// Función objetivo
-			obj = cplex.addMinimize();
+			obj = cplex.addMaximize();
 
 			// tenemos que agregar la variable h así
 			// esto registra la columna de la h con la función objetivo, con coeficiente 1
-			IloColumn iloColumn = masterData.cplex.column(obj, 1);
+			IloColumn iloColumn = cplex.column(obj, -1);
 
 			// Constraints para la primera desigualdad del master.
-			costLessThanH = new IloRange[dataModel.getV0().size()];
-			for (int i = 0; i < dataModel.getV0().size(); i++) {
+			costLessThanH = new TreeMap<Integer, IloRange>();
+			for (int v0:dataModel.getV0()) {
 				// El addRange este funciona como el rango de la desigualdad. En
 				// este caso, entre -infinito y 0
-				costLessThanH[i] = cplex.addRange(Double.MIN_VALUE, 0, "costLessThanH");
+				costLessThanH.put(v0, cplex.addRange(-Double.MAX_VALUE, 0, "costLessThanH"));
 
 				// y registro la variable h para esa desigualdad.
-				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH[i], -1.0));
+				iloColumn = iloColumn.and(cplex.column(this.costLessThanH.get(v0), -1.0));
 			}
 
 			// Creamos la variable h que representa esa columna.
-			h = masterData.cplex.numVar(iloColumn, 0, dataModel.getMaxT(), "h");
-			masterData.cplex.add(h);
+			h = cplex.numVar(iloColumn, 0, dataModel.getMaxT(), "h");
+			cplex.add(h);
 
 			// y ahora creamos la segunda desigualdad, vacía
 			vertexBelongsToOneTree = new IloRange[dataModel.getGrafo().getVertices()];
@@ -112,9 +111,9 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			masterData.cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
 
 			// Exportación del modelo.
-			if (config.EXPORT_MODEL)
-				masterData.cplex.exportModel(config.EXPORT_MASTER_DIR + "master_" + this.getIterationCount() + ".lp");
-
+			//-if (config.EXPORT_MODEL)
+				//masterData.cplex.exportModel(config.EXPORT_MASTER_DIR + "master_" + this.getIterationCount() + ".lp");
+				masterData.cplex.exportModel("master_" + this.getIterationCount() + ".lp");
 			// Resolvemos el modelo.
 			if (!masterData.cplex.solve() || masterData.cplex.getStatus() != IloCplex.Status.Optimal) {
 				if (masterData.cplex.getCplexStatus() == IloCplex.CplexStatus.AbortTimeLim)
@@ -140,8 +139,13 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 	public void initializePricingProblem(MBTPricingProblem pricingProblem) {
 		try {
 
+			IloRange[] costLessThanHEnOrdInsercion = new IloRange[this.costLessThanH.size()];
 			// Duales para la primera restricción.
-			double[] dualValuesRest1 = masterData.cplex.getDuals(this.costLessThanH);
+			int i = 0;
+			for (int v0 : this.costLessThanH.keySet())
+				costLessThanHEnOrdInsercion[i++] = this.costLessThanH.get(v0);
+
+			double[] dualValuesRest1 = masterData.cplex.getDuals(costLessThanHEnOrdInsercion);
 			// Duales para la segunda restricción.
 			double[] dualValuesRest2 = masterData.cplex.getDuals(this.vertexBelongsToOneTree);
 
@@ -173,7 +177,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			// Registramos la columna con los primeros constraints, si este T
 			// comienza en un v0
 			if (dataModel.getV0().contains(column.getArbol().getRoot()))
-				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH[column.getArbol().getRoot()],
+				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH.get(column.getArbol().getRoot()),
 						column.getArbol().getCosto()));
 
 			// Registramos la columna con los segundos constraints, para los
@@ -181,8 +185,10 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			for (Integer vertex : column.getArbol().getInternalNodes())
 				iloColumn = iloColumn.and(masterData.cplex.column(this.vertexBelongsToOneTree[vertex], 1.0));
 
+			iloColumn = iloColumn.and(masterData.cplex.column(this.vertexBelongsToOneTree[column.getArbol().getRoot()], 1.0));
 			// Creamos la variable
-			IloNumVar var = masterData.cplex.numVar(iloColumn, 0, Double.MAX_VALUE, "T_" + masterData.getNrColumns());
+			IloNumVar var = masterData.cplex.numVar(iloColumn, 0, 1, "T_" + masterData.getNrColumns());
+			System.out.println("Agregando variable " +  "T_" + masterData.getNrColumns());
 			masterData.cplex.add(var);
 			masterData.addColumn(column, var);
 		} catch (IloException e) {

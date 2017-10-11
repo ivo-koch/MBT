@@ -59,7 +59,7 @@ public class Arbol {
 						+ (this.vertices.length - 1));
 
 			if (this.vertices[parent] == -1)
-				throw new RuntimeException(parent + " no está en el árbol como padre.");
+				throw new RuntimeException(parent + " no está en el árbol.");
 
 			if (this.vertices[v] > -1)
 				throw new RuntimeException(v + "ya está en el árbol");

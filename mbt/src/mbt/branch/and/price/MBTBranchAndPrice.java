@@ -18,9 +18,9 @@ import util.Grafo;
 /**
  * Clase principal del branch and price.
  */
-public final class BranchAndPrice extends AbstractBranchAndPrice<DataModel, MBTColumn, MBTPricingProblem> {
+public final class MBTBranchAndPrice extends AbstractBranchAndPrice<DataModel, MBTColumn, MBTPricingProblem> {
 
-    public BranchAndPrice(DataModel dataModel,
+    public MBTBranchAndPrice(DataModel dataModel,
                           AbstractMaster<DataModel, MBTColumn, MBTPricingProblem, ? extends MasterData> master,
                           MBTPricingProblem pricingProblem,
                           List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers,

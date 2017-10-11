@@ -3,10 +3,14 @@ package mbt.branch.and.price.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jorlib.frameworks.columnGeneration.io.SimpleBAPLogger;
+import org.jorlib.frameworks.columnGeneration.io.SimpleCGLogger;
+import org.jorlib.frameworks.columnGeneration.io.SimpleDebugger;
 import org.jorlib.frameworks.columnGeneration.io.TimeLimitExceededException;
 import org.junit.Test;
 
@@ -20,7 +24,7 @@ import util.Grafo;
 
 public class ExactPricingProblemSolverMultipleV0Test {
 
-	//@Test
+	@Test
 	public void testModelo() throws TimeLimitExceededException {
 
 		Grafo g = new Grafo(11);
@@ -77,7 +81,7 @@ public class ExactPricingProblemSolverMultipleV0Test {
 		assertEquals(3l, solucion.getCosto(), 0.0001);
 	}
 
-	//@Test
+	@Test
 	public void testCalculoCosto() throws TimeLimitExceededException {
 
 		Grafo g = new Grafo(14);
@@ -109,7 +113,7 @@ public class ExactPricingProblemSolverMultipleV0Test {
 
 		// ajusto los pesos de forma que el árbol seleccionado resulte todo el grafo
 
-		dualCosts[0] = 0.01;	
+		dualCosts[0] = 0.01;
 
 		for (int i = 0; i < g.getVertices(); i++)
 			dualCosts[i + V0.size()] = -1;
@@ -134,7 +138,7 @@ public class ExactPricingProblemSolverMultipleV0Test {
 	}
 
 	@Test
-	public void testBranchingPerformed() throws TimeLimitExceededException {
+	public void testBranching() throws TimeLimitExceededException {
 
 		Grafo g = new Grafo(9);
 
@@ -159,12 +163,20 @@ public class ExactPricingProblemSolverMultipleV0Test {
 		double[] dualCosts = new double[V0.size() + g.getVertices()];
 
 		// ajusto los pesos de forma que el árbol seleccionado resulte T0
-		dualCosts[0] = 0.01;
-		dualCosts[1] = 100;
+		dualCosts[0] = 0.875;
+		dualCosts[1] = 0.125;
+		
+//		for (int i = 0; i < g.getVertices(); i++)
+//			dualCosts[i + V0.size()] = -1;
 
-		for (int i = 0; i < g.getVertices(); i++)
-			dualCosts[i + V0.size()] = -1;
-
+		dualCosts[2] = -1;
+		dualCosts[3] = -1;
+		dualCosts[4] = -1;
+		dualCosts[5] = -1;
+		dualCosts[6] = -1;
+		dualCosts[7] = -1;
+		dualCosts[8] = -1;
+		dualCosts[9] = -1;
 		pricingProblem.initPricingProblem(dualCosts);
 		ExactPricingProblemSolverMultipleV0 exactPricingSolver = new ExactPricingProblemSolverMultipleV0(dataModel,
 				pricingProblem);
@@ -181,7 +193,7 @@ public class ExactPricingProblemSolverMultipleV0Test {
 
 		assertEquals(8l, solucion.getInternalNodes().size() + 1);
 		assertEquals(solucion.calcularCosto(), solucion.getCosto(), 0.0001);
-		assertEquals(-7 + 0.01 * 4, solucion.getValorFuncionObjetivo(), 0.0001);
+		assertEquals(-8 + 0.01 * 4, solucion.getValorFuncionObjetivo(), 0.0001);
 
 		////// ahora hacemos el branching por 0, 4
 		MBTBranchingDecision bd = new MBTBranchingDecision(g.getArista(0, 4));
@@ -198,31 +210,68 @@ public class ExactPricingProblemSolverMultipleV0Test {
 
 		// si resuelvo el modelo, qué carajo debería pasar?
 
-		// ajusto los pesos de forma que gana el que tiene más vértices (debería ser el que sale de v0)
+		// ajusto los pesos de forma que gana el que tiene más vértices (debería ser el
+		// que sale de v0)
+		dualCosts = new double[dataModel.getV0().size() + g.getVertices()];
 		dualCosts[0] = 0.01;
 		dualCosts[1] = 0.01;
 		dualCosts[2] = 0.01;
 
 		for (int i = 0; i < g.getVertices(); i++)
-			dualCosts[i + V0.size()] = -1;
+			dualCosts[i + dataModel.getV0().size()] = -1;
 
 		pricingProblem.initPricingProblem(dualCosts);
-		
+
 		exactPricingSolver.setObjective();
 
-		//resolvemos otra vez
+		// resolvemos otra vez
 		Arbol solucionLuegoDelBranch = exactPricingSolver.generateNewColumns().get(0).getArbol();
-		
-		//y nos fijamos qué resultó de resolver el problema brancheado.
+
+		// y nos fijamos qué resultó de resolver el problema brancheado.
 		assertEquals(4l, solucionLuegoDelBranch.getInternalNodes().size());
 		assertEquals(0l, solucionLuegoDelBranch.getRoot());
 		assertTrue(solucionLuegoDelBranch.contains(1));
 		assertTrue(solucionLuegoDelBranch.contains(2));
 		assertTrue(solucionLuegoDelBranch.contains(3));
 		assertTrue(solucionLuegoDelBranch.contains(5));
-		assertEquals(solucionLuegoDelBranch.calcularCosto(), solucionLuegoDelBranch.getCosto(), 0.0001);
-		
-		assertEquals(-4 + 0.01 * 4, solucionLuegoDelBranch.getValorFuncionObjetivo(), 0.0001);
+		assertEquals(1 + solucionLuegoDelBranch.calcularCosto(), solucionLuegoDelBranch.getCosto(), 0.0001);
+
+		assertEquals(-5 + 0.01 * 4, solucionLuegoDelBranch.getValorFuncionObjetivo(), 0.0001);
+
+		/// ahora revertimos esa decisión de branching
+
+		exactPricingSolver.branchingDecisionReversed(bd);
+
+		// quiere decir que ahora 4 no tiene que estar en V0, y todos los demás offset
+		// en 0
+		assertTrue(!dataModel.getV0().contains(4));
+		for (int i = 0; i < 9; i++)			
+				assertEquals(0l, dataModel.getOffset()[i]);
+
+		dualCosts = new double[V0.size() + g.getVertices()];
+
+		// ajusto los pesos de forma que el árbol seleccionado resulte T0
+		dualCosts[0] = 0.01;
+		dualCosts[1] = 100;
+
+		for (int i = 0; i < g.getVertices(); i++)
+			dualCosts[i + V0.size()] = -1;
+
+		pricingProblem.initPricingProblem(dualCosts);
+
+		exactPricingSolver.setObjective();
+
+		columnas = exactPricingSolver.generateNewColumns();
+		solucion = columnas.get(0).getArbol();
+
+		assertEquals(0l, solucion.getRoot());
+		for (int i = 0; i < 9; i++)
+			if (i != 8)
+				assertTrue(solucion.contains(i));
+
+		assertEquals(8l, solucion.getInternalNodes().size() + 1);
+		assertEquals(solucion.calcularCosto(), solucion.getCosto(), 0.0001);
+		assertEquals(-8 + 0.01 * 4, solucion.getValorFuncionObjetivo(), 0.0001);
 
 	}
 

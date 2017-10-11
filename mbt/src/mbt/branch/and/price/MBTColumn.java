@@ -64,5 +64,5 @@ public final class MBTColumn extends AbstractColumn<DataModel, MBTPricingProblem
 			return false;
 		return true;
 	}
-
+ 
 }

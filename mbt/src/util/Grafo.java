@@ -110,9 +110,7 @@ public class Grafo {
 	public Arbol bfs(Set<Integer> V0) {
 
 		int vn = this.getVertices();
-		Arbol.Builder builder = new Arbol.Builder(this.getVertices(), vn);
-
-		List<Integer> res = new ArrayList<Integer>();
+		Arbol.Builder builder = new Arbol.Builder(this.getVertices() + 1, vn);
 
 		boolean visited[] = new boolean[this.getVertices()];
 
@@ -123,6 +121,7 @@ public class Grafo {
 			// Mark the current node as visited and enqueue it
 			visited[v0] = true;
 			queue.add(v0);
+			builder.addVertex(v0, vn);
 		}
 
 		while (queue.size() != 0) {
@@ -135,6 +134,7 @@ public class Grafo {
 				if (!visited[h]) {
 					visited[h] = true;
 					queue.add(h);
+					builder.addVertex(h, s);
 				}
 			}
 		}
