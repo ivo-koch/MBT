@@ -1,12 +1,6 @@
 package mbt.modelo.compacto.variables.x;
 
 
-import java.io.ByteArrayOutputStream;
-import java.util.HashSet;
-import java.util.Set;
-
-import util.Grafo;
-import util.GrafosFactory;
 import util.GraphRenderer;
 import util.GraphUtils;
 

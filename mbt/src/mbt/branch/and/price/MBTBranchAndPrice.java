@@ -1,19 +1,14 @@
 package mbt.branch.and.price;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.jgrapht.util.VertexPair;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchAndPrice;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchCreator;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.BAPNode;
 import org.jorlib.frameworks.columnGeneration.master.AbstractMaster;
 import org.jorlib.frameworks.columnGeneration.master.MasterData;
 import org.jorlib.frameworks.columnGeneration.pricing.AbstractPricingProblemSolver;
-
-import util.Grafo;
 
 /**
  * Clase principal del branch and price.
@@ -61,5 +56,6 @@ public final class MBTBranchAndPrice extends AbstractBranchAndPrice<DataModel, M
         for(MBTColumn column : node.getSolution())
             vertexCount+= column.getArbol().getInternalNodes().size() + 1; //la raíz está afuera del conj de vértices.
         return vertexCount==dataModel.getGrafo().getVertices();
+    	//return true;
     }
 }

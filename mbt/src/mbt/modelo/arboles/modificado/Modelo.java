@@ -1,16 +1,13 @@
 package mbt.modelo.arboles.modificado;
 
+import java.io.OutputStream;
+import java.util.ArrayList;
+
 import ilog.concert.IloException;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.concert.IloRange;
 import ilog.cplex.IloCplex;
-
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 import util.Grafo;
 
 public class Modelo {

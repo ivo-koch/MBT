@@ -6,8 +6,6 @@ import java.util.Set;
 
 import util.Grafo;
 import util.GrafosFactory;
-import util.GraphRenderer;
-import util.GraphUtils;
 
 public class MainPruebitaRapida {
 

@@ -3,14 +3,10 @@ package mbt.branch.and.price.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jorlib.frameworks.columnGeneration.io.SimpleBAPLogger;
-import org.jorlib.frameworks.columnGeneration.io.SimpleCGLogger;
-import org.jorlib.frameworks.columnGeneration.io.SimpleDebugger;
 import org.jorlib.frameworks.columnGeneration.io.TimeLimitExceededException;
 import org.junit.Test;
 
@@ -160,23 +156,8 @@ public class ExactPricingProblemSolverMultipleV0Test {
 
 		MBTPricingProblem pricingProblem = new MBTPricingProblem(dataModel, "testPricingProblem");
 
-		double[] dualCosts = new double[V0.size() + g.getVertices()];
+		double[] dualCosts = {0.875,0.125,0.0,-0.875,-0.8749999999999992,-0.8749999999999999,-0.8750000000000001,-8.881784197001252E-16,-0.0,-0.125,-0.0};
 
-		// ajusto los pesos de forma que el árbol seleccionado resulte T0
-		dualCosts[0] = 0.875;
-		dualCosts[1] = 0.125;
-		
-//		for (int i = 0; i < g.getVertices(); i++)
-//			dualCosts[i + V0.size()] = -1;
-
-		dualCosts[2] = -1;
-		dualCosts[3] = -1;
-		dualCosts[4] = -1;
-		dualCosts[5] = -1;
-		dualCosts[6] = -1;
-		dualCosts[7] = -1;
-		dualCosts[8] = -1;
-		dualCosts[9] = -1;
 		pricingProblem.initPricingProblem(dualCosts);
 		ExactPricingProblemSolverMultipleV0 exactPricingSolver = new ExactPricingProblemSolverMultipleV0(dataModel,
 				pricingProblem);

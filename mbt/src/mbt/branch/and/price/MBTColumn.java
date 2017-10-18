@@ -30,10 +30,15 @@ public final class MBTColumn extends AbstractColumn<DataModel, MBTPricingProblem
 		this.arbol = arbol;
 	}
 
+//	@Override
+//	public String toString() {
+//		return "Value: " + this.value + " artificial: " + isArtificialColumn + " set: "
+//				+ this.getArbol().getInternalNodes().toString() + " root: v" + this.getArbol().getRoot() + "t : " + this.getArbol().getCosto();
+//	}
+	
 	@Override
 	public String toString() {
-		return "Value: " + this.value + " artificial: " + isArtificialColumn + " set: "
-				+ this.getArbol().getInternalNodes().toString() + " root: v" + this.getArbol().getRoot();
+		return " set: " +this.getArbol().getInternalNodes().toString() + " root: v" + this.getArbol().getRoot() + "t : " + this.getArbol().getCosto();
 	}
 
 	public Arbol getArbol() {

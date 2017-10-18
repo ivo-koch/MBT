@@ -16,8 +16,9 @@ public final class MBTPricingProblem extends AbstractPricingProblem<DataModel> {
 		super(dataModel, name);
 	}
 
-	// Desde acá se inicializa el problema de pricing con las duales del master
-	public void initPricingProblem(double[] duals) {
-		this.dualCosts = duals;
-	}
+//	// Desde acá se inicializa el problema de pricing con las duales del master
+//	public void initPricingProblem(double[] duals) {
+//		for (int i = 0; i < duals.length; i++)
+//			this.dualCosts[i] = duals;
+//	}
 }

@@ -90,18 +90,18 @@ public final class ExactPricingProblemSolverMultipleV0
 						int Ni = dataModel.getGrafo().getVecinos(i).size();
 						x[i][j] = new IloNumVar[Ni];
 						for (int k = 0; k < Ni; k++)
-							x[i][j][k] = cplex.boolVar();
+							x[i][j][k] = cplex.boolVar("x[" + i + "," + j + "," + k +"]");
 					}
 
 			// variable t
 			t = new IloNumVar[dataModel.getGrafo().getVertices()];
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
-				t[i] = cplex.numVar(0, dataModel.getMaxT());
+				t[i] = cplex.numVar(0, dataModel.getMaxT(), "t" + i);
 
 			// variable z
 			z = new IloNumVar[dataModel.getGrafo().getVertices()];
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
-				z[i] = cplex.boolVar();
+				z[i] = cplex.boolVar("z" + i);
 
 			// función objetivo vacía
 			// vamos a dar la expresión de la f.obj. en el método setObjective()
@@ -169,7 +169,7 @@ public final class ExactPricingProblemSolverMultipleV0
 		for (int i = 0; i < this.pricingProblem.dualCosts.length; i++)
 			sb.append(this.pricingProblem.dualCosts[i] + ",");
 		sb.append("\n");
-
+		
 		// variable x
 		for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
 			for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
@@ -194,7 +194,7 @@ public final class ExactPricingProblemSolverMultipleV0
 		return sb.toString();
 	}
 
-	private int activacion = 0;
+	private int activacion = 1;
 	/**
 	 * Método principal que resuelve el problema de pricing.
 	 * 
@@ -212,6 +212,7 @@ public final class ExactPricingProblemSolverMultipleV0
 
 			cplex.exportModel("pricingProblem" + activacion + ".lp");
 			activacion++;
+			logger.debug("Resolviendo pricing...");
 			// Resolvemos el problema
 			if (!cplex.solve() || cplex.getStatus() != IloCplex.Status.Optimal) {
 				if (cplex.getCplexStatus() == IloCplex.CplexStatus.AbortTimeLim) {
@@ -219,24 +220,25 @@ public final class ExactPricingProblemSolverMultipleV0
 				} else if (cplex.getStatus() == IloCplex.Status.Infeasible) {
 
 					pricingProblemInfeasible = true;
-					this.objective = Double.MIN_VALUE;
+					this.objective = Double.MAX_VALUE;
 					throw new RuntimeException("Pricing problem infeasible");
 				} else {
 					throw new RuntimeException("Pricing problem solve failed! Status: " + cplex.getStatus());
 				}
 			} else { // Encontramos un óptimo
+				logger.debug("Pricing resuelto");
 				this.pricingProblemInfeasible = false;
 				this.objective = cplex.getObjValue();
 
 				// podemos agregar el resultado a la base?
-				if (objective < 0 - config.PRECISION) {
+				if (objective < -config.PRECISION) { //- config.PRECISION) {
 					// SI
 					// si es así, agregamos una nueva columna representada por ese árbol a la base
-					int t_v0 = 0;
+					double t_v0 = 0;
 					int v0 = -1;
 					for (int v : dataModel.getV0())
 						if (cplex.getValue(z[v]) > 1 - config.PRECISION) {
-							t_v0 = (int) Math.round(cplex.getValue(t[v]));
+							t_v0 = cplex.getValue(t[v]);
 							v0 = v;
 						}
 
@@ -256,11 +258,11 @@ public final class ExactPricingProblemSolverMultipleV0
 									vertices.add(w);
 								}
 					}
-
+					logger.debug("Obj: " + objective);
 					logger.debug(dumpModel());
 
 					MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(),
-							builder.buildArbol(t_v0, objective));
+							builder.buildArbol());
 					newPatterns.add(columna);
 
 				}

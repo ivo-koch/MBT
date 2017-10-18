@@ -3,12 +3,8 @@ package util;
 
 
 import java.awt.BorderLayout;
-import java.util.Set;
 
 import javax.swing.JFrame;
-
-import org.jgrapht.UndirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
 
 import com.mxgraph.layout.mxFastOrganicLayout;
 import com.mxgraph.layout.mxIGraphLayout;
@@ -24,6 +20,11 @@ public class GraphRenderer {
 	private Grafo g;
 	private int[] coloreo;
 
+	public static void main(String[] args) {
+		
+		Grafo g = GraphUtils.loadFromTxt("Rand12_0.3");
+		new GraphRenderer(g);
+	}
 	// Constructor
 	public GraphRenderer(Grafo g) {
 		this.g = g;

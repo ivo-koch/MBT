@@ -1,14 +1,13 @@
 package mbt.modelo.compacto.variables.x;
 
-import ilog.concert.IloNumExpr;
-import ilog.concert.IloNumVar;
-import ilog.concert.IloRange;
-import ilog.cplex.IloCplex;
-
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
 
+import ilog.concert.IloNumExpr;
+import ilog.concert.IloNumVar;
+import ilog.concert.IloRange;
+import ilog.cplex.IloCplex;
 import util.Grafo;
 
 public class Modelo {

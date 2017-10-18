@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchCreator;
 import org.jorlib.frameworks.columnGeneration.io.SimpleBAPLogger;
@@ -14,6 +14,8 @@ import org.jorlib.frameworks.columnGeneration.io.SimpleDebugger;
 import org.jorlib.frameworks.columnGeneration.pricing.AbstractPricingProblemSolver;
 
 import util.Grafo;
+import util.GrafosFactory;
+import util.GraphUtils;
 
 public class MBTSolver {
 
@@ -53,7 +55,7 @@ public class MBTSolver {
 		MBTBranchAndPrice bap = new MBTBranchAndPrice(dataModel, master, pricingProblem, solvers, branchCreators, 0,
 				dataModel.getGrafo().getVertices() - 1);
 
-		bap.warmStart(costo, initSolution);
+		bap.warmStart(-costo, initSolution);
 
 		// OPTIONAL: Attach a debugger
 		new SimpleDebugger(bap, true);
@@ -63,21 +65,21 @@ public class MBTSolver {
 
 		// Solve the Graph Coloring problem through Branch-and-Price
 		bap.runBranchAndPrice(System.currentTimeMillis() + 8000000L);
-
+		master.printSolution();
 		// Print solution:
 		System.out.println("================ Solution ================");
-		System.out.println("BAP terminated with objective (chromatic number): " + bap.getObjective());
+		System.out.println("BAP terminated with objective (MBT): " + bap.getObjective());
 		System.out.println("Total Number of iterations: " + bap.getTotalNrIterations());
 		System.out.println("Total Number of processed nodes: " + bap.getNumberOfProcessedNodes());
 		System.out.println("Total Time spent on master problems: " + bap.getMasterSolveTime()
 				+ " Total time spent on pricing problems: " + bap.getPricingSolveTime());
-		if (bap.hasSolution()) {
-			System.out.println("Solution is optimal: " + bap.isOptimal());
-			System.out.println("Columns (only non-zero columns are returned):");
-			List<MBTColumn> solution = bap.getSolution();
-			for (MBTColumn column : solution)
-				System.out.println(column);
-		}
+		// if (bap.hasSolution()) {
+		System.out.println("Solution is optimal: " + bap.isOptimal());
+		System.out.println("Columns (only non-zero columns are returned):");
+		List<MBTColumn> solution = bap.getSolution();
+		for (MBTColumn column : solution)
+			System.out.println(column);
+		// }
 
 		// Clean up:
 		bap.close(); // Close master and pricing problems
@@ -85,22 +87,25 @@ public class MBTSolver {
 	}
 
 	public static void main(String[] args) throws IOException {
-		Grafo g = new Grafo(9);
+		// Grafo g = new Grafo(9);
+		//
+		// g.setArista(0, 1);
+		// g.setArista(0, 2);
+		// g.setArista(0, 3);
+		// g.setArista(0, 4);
+		// g.setArista(2, 5);
+		// g.setArista(4, 6);
+		// g.setArista(4, 7);
+		// g.setArista(8, 7);
 
-		g.setArista(0, 1);
-		g.setArista(0, 2);
-		g.setArista(0, 3);
-		g.setArista(0, 4);
-		g.setArista(2, 5);
-		g.setArista(4, 6);
-		g.setArista(4, 7);
-		g.setArista(8, 7);
-
-		Set<Integer> V0 = new HashSet<Integer>();
+		Set<Integer> V0 = new TreeSet<Integer>();
 
 		V0.add(0);
-		V0.add(8);
+		V0.add(10);
 
+		Grafo g = GraphUtils.loadFromTxt("Rand12_0.3");
+
+		//GraphUtils.saveToTxt("Rand12_0.3", g);
 		new MBTSolver(g, V0);
 	}
 

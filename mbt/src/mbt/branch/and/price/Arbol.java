@@ -16,7 +16,7 @@ public class Arbol {
 	private final int root;
 
 	/** t del árbol. **/
-	private final int costo;
+	private final double costo;
 
 	/***
 	 * Nos guardamos por las dudas el valor de la función objetivo de cuando
@@ -76,7 +76,7 @@ public class Arbol {
 			return new Arbol(this.vertices, this.root);
 		}
 
-		public Arbol buildArbol(int costo, double valorFuncionObjetivo) {
+		public Arbol buildArbol(double costo, double valorFuncionObjetivo) {
 
 			return new Arbol(this.vertices, this.root, costo, valorFuncionObjetivo);
 		}
@@ -119,7 +119,7 @@ public class Arbol {
 	 * @param root
 	 * @param costo
 	 */
-	private Arbol(int[] vertices, int root, int costo, double valorFuncionObjetivo) {
+	private Arbol(int[] vertices, int root, double costo, double valorFuncionObjetivo) {
 
 		this.vertices = vertices;
 		this.root = root;
