@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -12,9 +13,9 @@ import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchCreat
 import org.jorlib.frameworks.columnGeneration.io.SimpleBAPLogger;
 import org.jorlib.frameworks.columnGeneration.io.SimpleDebugger;
 import org.jorlib.frameworks.columnGeneration.pricing.AbstractPricingProblemSolver;
+import org.jorlib.frameworks.columnGeneration.util.Configuration;
 
 import util.Grafo;
-import util.GrafosFactory;
 import util.GraphUtils;
 
 public class MBTSolver {
@@ -22,6 +23,10 @@ public class MBTSolver {
 	// private final Grafo grafo;
 	public MBTSolver(Grafo grafo, Set<Integer> V0) {
 
+		Properties properties= new Properties();
+		properties.setProperty("EXPORT_MODEL", "false");
+		Configuration.readFromFile(properties);
+		
 		// el data model con los datos de V0 y el grafo
 		DataModel dataModel = new DataModel(grafo, V0);
 

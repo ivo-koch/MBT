@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="lib" path="cplex.jar"/>
+	<classpathentry kind="lib" path="jgrapht-jdk1.6.jar"/>
+	<classpathentry kind="lib" path="jgraphx.jar"/>
+	<classpathentry kind="lib" path="javatuples-1.2.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-core-1.1.1.jar" sourcepath="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-core-1.1.1-sources.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-core-1.1.1-javadoc.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-demo-1.1.1.jar" sourcepath="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-demo-1.1.1-sources.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-demo-1.1.1-javadoc.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/lib/jorlib-demo-1.1.1-sources.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/slf4j.api-1.6.1.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/guava-14.0.1.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/logback-classic-0.9.28.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/logback-core-0.9.28.jar"/>
+	<classpathentry kind="lib" path="/home/ik/dev/svn/papers/trunk/minimum broadcast time/jorlib1.1.1/commons-collections4-4.1/commons-collections4-4.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

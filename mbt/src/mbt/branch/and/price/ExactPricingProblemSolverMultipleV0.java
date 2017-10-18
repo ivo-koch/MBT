@@ -210,7 +210,7 @@ public final class ExactPricingProblemSolverMultipleV0
 			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
 			cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
 
-			cplex.exportModel("pricingProblem" + activacion + ".lp");
+			//cplex.exportModel("pricingProblem" + activacion + ".lp");
 			activacion++;
 			logger.debug("Resolviendo pricing...");
 			// Resolvemos el problema
@@ -324,46 +324,37 @@ public final class ExactPricingProblemSolverMultipleV0
 			int origen = decision.getArista().getV1();
 			int destino = decision.getArista().getV2();
 
-			// agregamos el destino a V0
-			this.dataModel.getV0().add(destino);
-
-			// y el offset del origen aumenta en uno
-			this.dataModel.getOffset()[origen]++;
-
-			if (this.dataModel.getOffset()[origen] > this.dataModel.getMaxT())
-				throw new IllegalStateException("No podemos branchear con un t mayor a maxT!");
-
-			// el offset del destino es del origen.
-			this.dataModel.getOffset()[destino] = this.dataModel.getOffset()[origen];
-
-			// ahora destino pasa a estar en V0
-			// así que ahora, para todos sus vecinos fuera de V0, deja de aplicar el
-			// constraint 32
-			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
-			for (AristaDirigida arista : aristasIncidentes)
-				if (!this.dataModel.getV0().contains(arista.getV2())) {
-					this.removeConstraint32(destino, arista.getV2());
-					this.removeConstraint32(arista.getV2(), destino);
-				}
-
-			// lo mismo pasa con la desigualdad 33, antes aplicaba porque j=destino
-			// no estaba en V0 y
-			// ahora ya no.
-			this.removeConstraint33(destino);
-
-			// actualizamos la desigualdad 34, porque cambió el V0
-			this.updateConstraint34();
-
-			// y lo mismo la de offset
-			this.addConstraintOffset(destino);
-
-			// actualizamos el constraint de offset para el origen, porque cambió.
-
-			this.removeConstraintOffset(origen);
-			this.addConstraintOffset(origen);
-
-			// para el nuevo v0 vale la rest. 35 ahora.
-			this.addConstraint35(destino);
+			this.close();
+			this.buildModel();
+//	
+//			// ahora destino pasa a estar en V0
+//			// así que ahora, para todos sus vecinos fuera de V0, deja de aplicar el
+//			// constraint 32
+//			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
+//			for (AristaDirigida arista : aristasIncidentes)
+//				if (!this.dataModel.getV0().contains(arista.getV2())) {
+//					this.removeConstraint32(destino, arista.getV2());
+//					this.removeConstraint32(arista.getV2(), destino);
+//				}
+//
+//			// lo mismo pasa con la desigualdad 33, antes aplicaba porque j=destino
+//			// no estaba en V0 y
+//			// ahora ya no.
+//			this.removeConstraint33(destino);
+//
+//			// actualizamos la desigualdad 34, porque cambió el V0
+//			this.updateConstraint34();
+//
+//			// y lo mismo la de offset
+//			this.addConstraintOffset(destino);
+//
+//			// actualizamos el constraint de offset para el origen, porque cambió.
+//
+//			this.removeConstraintOffset(origen);
+//			this.addConstraintOffset(origen);
+//
+//			// para el nuevo v0 vale la rest. 35 ahora.
+//			this.addConstraint35(destino);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -385,72 +376,35 @@ public final class ExactPricingProblemSolverMultipleV0
 			int origen = decision.getArista().getV1();
 			int destino = decision.getArista().getV2();
 
-			// el destino se va de V0, porque lo pusimos en la decisión de branching que
-			// estamos revirtiendo.
-			this.dataModel.getV0().remove(destino);
-			this.dataModel.getOffset()[destino] = 0;
+			this.close();
+			this.buildModel();
+//			
+//			// así que ahora, para todos sus vecinos fuera de V0, aplica el constraint 32
+//			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
+//			// entonces se lo agregamos.
+//			for (AristaDirigida arista : aristasIncidentes)
+//				if (!this.dataModel.getV0().contains(arista.getV2())) {
+//					this.addConstraint32(destino, arista.getV2());
+//					this.addConstraint32(arista.getV2(), destino);
+//				}
+//
+//			// lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino
+//			// estaba en V0 y ahora sí porque deja de estar.
+//			this.addConstraint33(destino);
+//
+//			// y la desigualdad 34 deja de ser necesaria, ya no está en V0
+//			this.updateConstraint34();
+//
+//			// y lo mismo la de offset
+//			this.removeConstraintOffset(destino);
+//
+//			
+//			this.removeConstraintOffset(origen);
+//			this.addConstraintOffset(origen);
+//			this.removeConstraint35(destino);
+//			
 
-			// el origen va a tener el valor de offset que estaba en la decisión menos 1.
-			this.dataModel.getOffset()[origen]--;
-			if (this.dataModel.getOffset()[origen] < 0)
-				throw new IllegalStateException("No puede ser que el valor de offset de un vértice sea negativo");
-
-			// así que ahora, para todos sus vecinos fuera de V0, aplica el constraint 32
-			List<AristaDirigida> aristasIncidentes = dataModel.getGrafo().getAristasIncidentes(destino);
-			// entonces se lo agregamos.
-			for (AristaDirigida arista : aristasIncidentes)
-				if (!this.dataModel.getV0().contains(arista.getV2())) {
-					this.addConstraint32(destino, arista.getV2());
-					this.addConstraint32(arista.getV2(), destino);
-				}
-
-			// lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino
-			// estaba en V0 y ahora sí porque deja de estar.
-			this.addConstraint33(destino);
-
-			// y la desigualdad 34 deja de ser necesaria, ya no está en V0
-			this.updateConstraint34();
-
-			// y lo mismo la de offset
-			this.removeConstraintOffset(destino);
-
-			// // ahora, el offset del origen, si revertimos el branch, tenemos que dejarlo
-			// en
-			// // 1 menos que el que tenía.
-			// // si el offset quedó en 0 y no está en el V0 original, lo sacamos.
-			// if (this.dataModel.getOffset()[origen] == 0 &&
-			// !this.dataModel.getInitialV0().contains(origen)) {
-			// this.dataModel.getV0().remove(origen);
-			// // si sacamos el origen de V0, eso tiene impacto en las desigualdades.
-			//
-			// List<AristaDirigida> aristasIncid =
-			// dataModel.getGrafo().getAristasIncidentes(origen);
-			// // entonces se lo agregamos.
-			// for (AristaDirigida arista : aristasIncid)
-			// if (!this.dataModel.getV0().contains(arista.getV2())) {
-			// this.addConstraint32(origen, arista.getV2());
-			// this.addConstraint32(arista.getV2(), origen);
-			// }
-			//
-			// // lo mismo pasa con la desigualdad 33, antes no aplicaba porque destino
-			// // estaba en V0 y ahora sí porque deja de estar.
-			// this.addConstraint33(origen);
-			//
-			// // actualizamos la des. 34
-			// this.updateConstraint34();
-			//
-			// // y lo mismo la de offset
-			// this.removeConstraintOffset(origen);
-			// }
-
-			// else {
-			// actualizamos el offset del origen
-			this.removeConstraintOffset(origen);
-			this.addConstraintOffset(origen);
-			this.removeConstraint35(destino);
-			// }
-
-		} catch (IloException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -474,12 +428,12 @@ public final class ExactPricingProblemSolverMultipleV0
 				lhs = cplex.sum(lhs, cplex.prod(-1.0, x[v][i][k]));
 
 		IloConstraint nuevoConstraint = cplex.addLe(lhs, 0);
-
-		AristaDirigida arista = dataModel.getGrafo().getArista(i, j);
-		if (this.constraints32.containsKey(arista))
-			throw new RuntimeException("El constraint 32 ya existe para la arista " + i + " " + j);
-
-		this.constraints32.put(arista, nuevoConstraint);
+//
+//		AristaDirigida arista = dataModel.getGrafo().getArista(i, j);
+//		if (this.constraints32.containsKey(arista))
+//			throw new RuntimeException("El constraint 32 ya existe para la arista " + i + " " + j);
+//
+//		this.constraints32.put(arista, nuevoConstraint);
 	}
 
 	/***
@@ -506,9 +460,9 @@ public final class ExactPricingProblemSolverMultipleV0
 	 * @throws IloException
 	 */
 	private void addConstraint35(int i) throws IloException {
-
-		if (this.constraints35.containsKey(i))
-			throw new RuntimeException("El constraint 35 ya existe para el vértice " + i);
+//
+//		if (this.constraints35.containsKey(i))
+//			throw new RuntimeException("El constraint 35 ya existe para el vértice " + i);
 
 		Set<IloConstraint> rest = new HashSet<IloConstraint>();
 		for (int j : dataModel.getGrafo().getVecinos(i)) {
@@ -522,7 +476,7 @@ public final class ExactPricingProblemSolverMultipleV0
 			rest.add(cplex.addLe(lhs, 0));
 
 		}
-		this.constraints35.put(i, rest);
+		//this.constraints35.put(i, rest);
 	}
 
 	/***
@@ -591,10 +545,12 @@ public final class ExactPricingProblemSolverMultipleV0
 			for (int k = 0; k < dataModel.getGrafo().getVecinos(i).size(); k++)
 				lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
-		if (this.constraints33.containsKey(j))
-			throw new RuntimeException("El constraint 33 ya existe para el vértice " + j);
-
-		this.constraints33.put(j, cplex.addEq(lhs, 0));
+		cplex.addEq(lhs, 0);
+		
+//		if (this.constraints33.containsKey(j))
+//			throw new RuntimeException("El constraint 33 ya existe para el vértice " + j);
+//
+//		this.constraints33.put(j, cplex.addEq(lhs, 0));
 	}
 
 	/***
@@ -610,10 +566,11 @@ public final class ExactPricingProblemSolverMultipleV0
 			for (int j : dataModel.getGrafo().getVecinos(i))
 				lhs = cplex.sum(lhs, cplex.prod(1.0, x[i][j][k]));
 
-		if (this.constraintsOffset.containsKey(i))
-			throw new RuntimeException("El constraint de offset ya existe para el vértice " + i);
-
-		this.constraintsOffset.put(i, cplex.addLe(lhs, 0));
+		cplex.addLe(lhs, 0);
+//		if (this.constraintsOffset.containsKey(i))
+//			throw new RuntimeException("El constraint de offset ya existe para el vértice " + i);
+//
+//		this.constraintsOffset.put(i, cplex.addLe(lhs, 0));
 	}
 
 	/***

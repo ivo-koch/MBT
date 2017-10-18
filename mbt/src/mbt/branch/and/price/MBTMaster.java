@@ -31,7 +31,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 	private IloRange[] vertexBelongsToOneTree; // Constraint
 
 	private IloNumVar h;
-	
+
 	private List<IloNumVar> vars = new ArrayList<IloNumVar>();
 
 	public MBTMaster(DataModel dataModel, MBTPricingProblem pricingProblem) {
@@ -65,10 +65,10 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 
 			// Constraints para la primera desigualdad del master.
 			costLessThanH = new TreeMap<Integer, IloRange>();
-			for (int v0:dataModel.getV0()) {
+			for (int v0 : dataModel.getV0()) {
 				// El addRange este funciona como el rango de la desigualdad. En
 				// este caso, entre -infinito y 0
-				costLessThanH.put(v0, cplex.addRange(-Double.MAX_VALUE, 0, "costLessThanH v" + v0 ));
+				costLessThanH.put(v0, cplex.addRange(-Double.MAX_VALUE, 0, "costLessThanH v" + v0));
 
 				// y registro la variable h para esa desigualdad.
 				iloColumn = iloColumn.and(cplex.column(this.costLessThanH.get(v0), -1.0));
@@ -77,8 +77,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			// Creamos la variable h que representa esa columna.
 			h = cplex.numVar(iloColumn, 0, dataModel.getMaxT(), "h");
 			cplex.add(h);
-			
-			
+
 			// y ahora creamos la segunda desigualdad, vacía
 			vertexBelongsToOneTree = new IloRange[dataModel.getGrafo().getVertices()];
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); i++)
@@ -94,7 +93,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 		MBTPricingProblem pricingProblem = this.pricingProblems.get(0);
 		varMap.put(pricingProblem, new OrderedBiMap<MBTColumn, IloNumVar>());
 
-		return new MBTMasterData(cplex, varMap);		
+		return new MBTMasterData(cplex, varMap);
 	}
 
 	/**
@@ -114,9 +113,9 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			masterData.cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
 
 			// Exportación del modelo.
-			//-if (config.EXPORT_MODEL)
-				//masterData.cplex.exportModel(config.EXPORT_MASTER_DIR + "master_" + this.getIterationCount() + ".lp");
-				masterData.cplex.exportModel("master_" + this.getIterationCount() + ".lp");
+			if (config.EXPORT_MODEL)
+				masterData.cplex.exportModel(config.EXPORT_MASTER_DIR + "master_" + this.getIterationCount() + ".lp");
+			// masterData.cplex.exportModel("master_" + this.getIterationCount() + ".lp");
 			// Resolvemos el modelo.
 			if (!masterData.cplex.solve() || masterData.cplex.getStatus() != IloCplex.Status.Optimal) {
 				if (masterData.cplex.getCplexStatus() == IloCplex.CplexStatus.AbortTimeLim)
@@ -141,7 +140,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 	@Override
 	public void initializePricingProblem(MBTPricingProblem pricingProblem) {
 		try {
-			
+
 			IloRange[] costLessThanHEnOrdInsercion = new IloRange[this.costLessThanH.size()];
 			// Duales para la primera restricción.
 			int i = 0;
@@ -155,13 +154,15 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			double[] dualValuesRest2 = masterData.cplex.getDuals(this.vertexBelongsToOneTree);
 
 			for (int j = 0; j < dataModel.getGrafo().getVertices(); j++)
-				logger.debug("Dual vertexBelongsToOneTree v" + j + ":" + masterData.cplex.getDual(this.vertexBelongsToOneTree[j]));
-			
-			//Hacemos la cuenta del costo reducido para cada columna, para verificar.
-			//Todas tendrían que ser > 0
-			for (IloNumVar var : vars)
-				logger.debug("Reduced cost " + var + ":" + masterData.cplex.getReducedCost(var));
-			
+				logger.debug("Dual vertexBelongsToOneTree v" + j + ":"
+						+ masterData.cplex.getDual(this.vertexBelongsToOneTree[j]));
+
+			// Hacemos la cuenta del costo reducido para cada columna, para verificar.
+			// Todas tendrían que ser > 0
+			// for (IloNumVar var : vars)
+			// logger.debug("Reduced cost " + var + ":" +
+			// masterData.cplex.getReducedCost(var));
+
 			// ponemos todo en el arreglo dual values.
 			double[] dualValues = Arrays.copyOf(dualValuesRest1, dualValuesRest1.length + dualValuesRest2.length);
 			System.arraycopy(dualValuesRest2, 0, dualValues, dualValuesRest1.length, dualValuesRest2.length);
@@ -198,10 +199,11 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			for (Integer vertex : column.getArbol().getInternalNodes())
 				iloColumn = iloColumn.and(masterData.cplex.column(this.vertexBelongsToOneTree[vertex], 1.0));
 
-			iloColumn = iloColumn.and(masterData.cplex.column(this.vertexBelongsToOneTree[column.getArbol().getRoot()], 1.0));
+			iloColumn = iloColumn
+					.and(masterData.cplex.column(this.vertexBelongsToOneTree[column.getArbol().getRoot()], 1.0));
 			// Creamos la variable
 			IloNumVar var = masterData.cplex.numVar(iloColumn, 0, Double.MAX_VALUE, "T_" + column);
-			logger.debug("Agregando variable " +  "T_" + column);
+			logger.debug("Agregando variable " + "T_" + column);
 			masterData.cplex.add(var);
 			masterData.addColumn(column, var);
 			vars.add(var);
@@ -260,6 +262,23 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 	@Override
 	public void branchingDecisionPerformed(BranchingDecision bd) {
 
+		// modificamos el V0 y el offser según la decisión del branch.
+		MBTBranchingDecision decision = (MBTBranchingDecision) bd;
+		int origen = decision.getArista().getV1();
+		int destino = decision.getArista().getV2();
+
+		// agregamos el destino a V0
+		this.dataModel.getV0().add(destino);
+
+		// y el offset del origen aumenta en uno
+		this.dataModel.getOffset()[origen]++;
+
+		if (this.dataModel.getOffset()[origen] > this.dataModel.getMaxT())
+			throw new IllegalStateException("No podemos branchear con un t mayor a maxT!");
+
+		// el offset del destino es del origen.
+		this.dataModel.getOffset()[destino] = this.dataModel.getOffset()[origen];
+
 		// acá cerramos el modelo de cplex y lo creamos otra vez.
 		this.close();
 		masterData = this.buildModel();
@@ -274,5 +293,20 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 	@Override
 	public void branchingDecisionReversed(BranchingDecision bd) {
 		// No hacemos nada en el master si backtrackeamos.
+		
+		MBTBranchingDecision decision = (MBTBranchingDecision) bd;
+		int origen = decision.getArista().getV1();
+		int destino = decision.getArista().getV2();
+
+		// el destino se va de V0, porque lo pusimos en la decisión de branching que
+		// estamos revirtiendo.
+		this.dataModel.getV0().remove(destino);
+		this.dataModel.getOffset()[destino] = 0;
+
+		// el origen va a tener el valor de offset que estaba en la decisión menos 1.
+		this.dataModel.getOffset()[origen]--;
+		if (this.dataModel.getOffset()[origen] < 0)
+			throw new IllegalStateException("No puede ser que el valor de offset de un vértice sea negativo");
+
 	}
 }
