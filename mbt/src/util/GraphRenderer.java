@@ -22,7 +22,7 @@ public class GraphRenderer {
 
 	public static void main(String[] args) {
 		
-		Grafo g = GraphUtils.loadFromTxt("Rand12_0.3");
+		Grafo g = GraphUtils.loadFromTxt("./rand/G_10_0.6");
 		new GraphRenderer(g);
 	}
 	// Constructor
