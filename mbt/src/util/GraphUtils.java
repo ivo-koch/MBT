@@ -9,6 +9,8 @@ import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.HashSet;
+import java.util.Set;
 
 
 
@@ -43,6 +45,38 @@ public abstract class GraphUtils {
 			writer.write(addenda + "\n");
 			writer.write(graph.toString());
 		}
+	}
+	
+	public static Set<Integer> leerV0(String fileName) throws NumberFormatException, IOException {
+
+		File inputFile = new File(fileName);
+		RandomAccessFile in = new RandomAccessFile(inputFile, "r");
+
+		String line;
+		Set<Integer> V0 = new HashSet<Integer>();
+
+		Grafo g = null;
+		while ((line = in.readLine()) != null) {
+			if (line.startsWith("#V0")) {
+
+				String[] elementos = line.split(":");
+				boolean first = true;
+				for(String elem: elementos) {
+					if (first) {
+						first = false;
+						continue;
+					}
+					if (!elem.isEmpty())
+						V0.add(Integer.parseInt(elem.trim()));
+				}
+				break;
+			}
+			
+
+		}
+		in.close();
+
+		return V0;
 	}
 	
 

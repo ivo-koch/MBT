@@ -104,6 +104,22 @@ public class Arbol {
 	 * @param vertices
 	 * @param root
 	 */
+	public Arbol(int n, int root) {
+
+		this.vertices = new int[n];
+		for (int i = 0; i < n; i++)
+			this.vertices[i] = -1;
+		this.vertices[root] = root;
+		this.root = root;
+		this.costo = 0;
+		this.valorFuncionObjetivo = Double.MAX_VALUE;
+	}
+
+	 /*** Crea un árbol a partir de un arreglo y su raíz.
+	 * 
+	 * @param vertices
+	 * @param root
+	 */
 	private Arbol(int[] vertices, int root) {
 
 		this.vertices = vertices;
@@ -200,9 +216,33 @@ public class Arbol {
 	public boolean contains(int v) {
 		return this.vertices[v] > -1;
 	}
+	
+	public void addVertex(int v, int parent) {
 
-	private Set<Integer> vertexSet;
+		if (v >= this.vertices.length)
+			throw new RuntimeException(v + " no es un label válido para un vértices. Debe estar entre 0 y "
+					+ (this.vertices.length - 1));
 
+		if (this.vertices[parent] == -1)
+			throw new RuntimeException(parent + " no está en el árbol.");
+
+		if (this.vertices[v] > -1)
+			throw new RuntimeException(v + "ya está en el árbol");
+
+		this.vertices[v] = parent;
+	}
+	
+	public void removeVertex(int v) {
+
+		if (this.vertices[v] == -1)
+			throw new RuntimeException(v + " no está en el árbol.");
+
+		if (!this.getHijos(v).isEmpty())
+			throw new RuntimeException(v + "tiene hijos en el árbol");
+
+		this.vertices[v] = -1;
+	}
+	
 	/***
 	 * Devuelve los nodos internos de este árbol
 	 * 
@@ -210,12 +250,10 @@ public class Arbol {
 	 */
 	public Set<Integer> getInternalNodes() {
 
-		if (vertexSet == null) {
-			vertexSet = new HashSet<Integer>();
+		Set<Integer> vertexSet = new HashSet<Integer>();
 			for (int v = 0; v < this.vertices.length; v++)
 				if (contains(v) && v != root)
 					vertexSet.add(v);
-		}
 
 		return Collections.unmodifiableSet(vertexSet);
 
@@ -243,6 +281,10 @@ public class Arbol {
 	public double getCosto() {
 		return costo;
 	}
+	
+//	public void setCosto(double costo) {
+//		this.costo = costo;
+//	}
 
 	@Override
 	public int hashCode() {

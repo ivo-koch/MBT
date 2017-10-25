@@ -1,25 +1,14 @@
 package mbt.branch.and.price;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.branchingDecisions.BranchingDecision;
 import org.jorlib.frameworks.columnGeneration.io.TimeLimitExceededException;
 import org.jorlib.frameworks.columnGeneration.pricing.AbstractPricingProblemSolver;
 
-import ilog.concert.IloConstraint;
-import ilog.concert.IloException;
-import ilog.concert.IloNumExpr;
-import ilog.concert.IloNumVar;
-import ilog.concert.IloObjective;
-import ilog.cplex.IloCplex;
-import ilog.cplex.IloCplex.UnknownObjectException;
-import util.Grafo;
 import util.Grafo.AristaDirigida;
 
 /***
@@ -29,20 +18,8 @@ import util.Grafo.AristaDirigida;
 public final class HeuristicPricingProblemSolver
 		extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem> {
 
-	/*** Instancia de cplex **/
-	private IloCplex cplex;
-	/** Funcion objetivo */
-	private IloObjective obj;
-
-	/*** Variables del modelo **/
-	private IloNumVar[][][] x;
-	private IloNumVar[] z;
-	private IloNumVar[] t;
-
 	/** Mantenemos acá las variables de la función objetivo */
-	IloNumVar[] varsEnFobj;
-
-
+	double[] duals;
 
 	/***
 	 * Crea un nuevo solver de pricing.
@@ -52,10 +29,9 @@ public final class HeuristicPricingProblemSolver
 	 */
 	public HeuristicPricingProblemSolver(DataModel dataModel, MBTPricingProblem pricingProblem) {
 		super(dataModel, pricingProblem);
-		this.name = "HeuristicPricingProblemSolver";		
+		this.name = "HeuristicPricingProblemSolver";
 	}
 
-	
 	/**
 	 * Método principal que resuelve el problema de pricing.
 	 * 
@@ -66,66 +42,65 @@ public final class HeuristicPricingProblemSolver
 	@Override
 	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {
 		List<MBTColumn> newPatterns = new ArrayList<>();
-		try {
-			// Límite de tiempo.
-			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
-			cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);			
-					
-			// Resolvemos el problema
-			if (!cplex.solve() || cplex.getStatus() != IloCplex.Status.Optimal) {
-				if (cplex.getCplexStatus() == IloCplex.CplexStatus.AbortTimeLim) {
-					throw new TimeLimitExceededException();
-				} else if (cplex.getStatus() == IloCplex.Status.Infeasible) {
 
-					pricingProblemInfeasible = true;
-					this.objective = Double.MAX_VALUE;
-					throw new RuntimeException("Pricing problem infeasible");
-				} else {
-					throw new RuntimeException("Pricing problem solve failed! Status: " + cplex.getStatus());
+		int i = 0;
+		for (int v0 : this.dataModel.getV0()) {
+
+			int n = this.dataModel.getGrafo().getVertices();
+
+			double coeficienteDev0 = duals[i++];
+
+			Arbol T = new Arbol(n, v0);
+
+			Set<AristaDirigida> aristasIncidentesAT = new HashSet<AristaDirigida>();
+			aristasIncidentesAT.addAll(this.dataModel.getGrafo().getAristasIncidentes(v0));
+
+			double sumaVertices = duals[dataModel.getV0().size() + v0];
+			boolean termine = false;
+			double mejorFuncionObjetivo = Double.MAX_VALUE;
+			while (!termine) {
+				AristaDirigida candidata = null;
+			
+				for (AristaDirigida a : aristasIncidentesAT) {
+					// calculamos cuánto mejora la función objetivo.
+
+					// cuánto costaría agregar a w?
+					int w = a.getV2();
+					// lo agregamos tentativamente a w, para calcular el costo.
+					T.addVertex(w, a.getV1());
+					double fObj = coeficienteDev0 * T.calcularCosto() + duals[dataModel.getV0().size() + w] + sumaVertices;
+
+					// encontramos una arista que mejora mi función objetivo
+					if (fObj < mejorFuncionObjetivo) {
+						candidata = a;
+						mejorFuncionObjetivo = fObj;
+
+						sumaVertices += duals[dataModel.getV0().size() + w];
+
+						// actualizamos la lista de aristas antes de iterar de nuevo, sino se calienta.
+						// y agrego sus aristas incidentes para procesar.
+						for (AristaDirigida b : this.dataModel.getGrafo().getAristasIncidentes(w))
+							if (!T.contains(b.getV2()))
+								aristasIncidentesAT.add(b);
+						// y boleteamos las aristas que tengan a w como destino
+						Set<AristaDirigida> aEliminar = new HashSet<AristaDirigida>();
+						for (AristaDirigida c : aristasIncidentesAT)
+							if (c.getV2() == w)
+								aEliminar.add(c);
+
+						aristasIncidentesAT.removeAll(aEliminar);
+						break;
+					} else
+						T.removeVertex(w);
 				}
-			} else { // Encontramos un óptimo
-				
-				this.pricingProblemInfeasible = false;
-				this.objective = cplex.getObjValue();
 
-				// podemos agregar el resultado a la base?
-				if (objective < -config.PRECISION) { //- config.PRECISION) {
-					// SI
-					// si es así, agregamos una nueva columna representada por ese árbol a la base
-					double t_v0 = 0;
-					int v0 = -1;
-					for (int v : dataModel.getV0())
-						if (cplex.getValue(z[v]) > 1 - config.PRECISION) {
-							t_v0 = cplex.getValue(t[v]);
-							v0 = v;
-						}
-
-					// Creamos el árbol.
-					Arbol.Builder builder = new Arbol.Builder(dataModel.getGrafo().getVertices(), v0);
-
-					// recorremos en bfs según las variables x_ijk, para armar el árbol.
-					LinkedList<Integer> vertices = new LinkedList<Integer>();
-					vertices.add(v0);
-
-					while (!vertices.isEmpty()) {
-						int v = vertices.poll();
-						for (int w : dataModel.getGrafo().getVecinos(v))
-							for (int k = 0; k < dataModel.getGrafo().getVecinos(v).size(); k++)
-								if (cplex.getValue(x[v][w][k]) > 1 - config.PRECISION && !builder.contains(w)) {
-									builder.addVertex(w, v);
-									vertices.add(w);
-								}
-					}
-					logger.debug("Obj: " + objective);					
-
-					MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(),
-							builder.buildArbol());
-					newPatterns.add(columna);
-
-				}
+				if (candidata == null)
+					termine = true;
 			}
-		} catch (IloException e) {
-			e.printStackTrace();
+			//T.setCosto(T.calcularCosto());
+			if (mejorFuncionObjetivo < -config.PRECISION)
+				newPatterns.add(new MBTColumn(pricingProblem, false, "HeuristicPricingProblemSolver", T));
+
 		}
 		return newPatterns;
 	}
@@ -136,25 +111,7 @@ public final class HeuristicPricingProblemSolver
 	 */
 	@Override
 	public void setObjective() {
-
-		try {
-
-			// nos fijamos las variables que tienen que ir en la función objetivo.
-			IloNumVar[] varsEnFobj = new IloNumVar[dataModel.getGrafo().getVertices() + dataModel.getV0().size()];
-
-			int l = 0;
-			for (int v0 : dataModel.getV0())
-				varsEnFobj[l++] = t[v0];
-
-			for (int i = 0; i < dataModel.getGrafo().getVertices(); i++)
-				varsEnFobj[l + i] = z[i];
-
-			// y le ponemos las variables duales como costos.
-			obj.setExpr(cplex.scalProd(pricingProblem.dualCosts, varsEnFobj));
-		} catch (IloException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		duals = pricingProblem.dualCosts;
 	}
 
 	/**
@@ -162,7 +119,7 @@ public final class HeuristicPricingProblemSolver
 	 */
 	@Override
 	public void close() {
-		cplex.end();
+
 	}
 
 	/**
@@ -174,17 +131,6 @@ public final class HeuristicPricingProblemSolver
 	 */
 	@Override
 	public void branchingDecisionPerformed(BranchingDecision bd) {
-		try {
-
-			// modificamos el V0 y el offser según la decisión del branch.
-			MBTBranchingDecision decision = (MBTBranchingDecision) bd;
-			int origen = decision.getArista().getV1();
-			int destino = decision.getArista().getV2();
-
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 
 	}
 
@@ -197,19 +143,6 @@ public final class HeuristicPricingProblemSolver
 	 */
 	@Override
 	public void branchingDecisionReversed(BranchingDecision bd) {
-		try {
-			MBTBranchingDecision decision = (MBTBranchingDecision) bd;
-			int origen = decision.getArista().getV1();
-			int destino = decision.getArista().getV2();
-
-
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
-
-
-
 
 }

@@ -62,6 +62,11 @@ public class Grafo {
 		private Grafo getOuterType() {
 			return Grafo.this;
 		}
+		
+		@Override
+		public String toString() {
+			return "[" + this.v1 +  ", " + this.v2 + "]";
+		}
 
 	}
 

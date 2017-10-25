@@ -11,7 +11,7 @@ public class TestGraphColoring {
 	@Test
 	public void test() throws IOException {
 		
-		ColoringGraph instancia = new ColoringGraph("./dimacs/anna.col"); 
+		ColoringGraph instancia = new ColoringGraph("./dimacs/DSJC125.1.col"); 
 		ChromaticNumberCalculator solver = new ChromaticNumberCalculator(instancia);		
 	}
 

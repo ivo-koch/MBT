@@ -51,6 +51,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 		IloCplex cplex = null;
 
 		try {
+			if (vars != null) vars.clear();
 			cplex = new IloCplex(); // Nueva instancia de cplex.
 			cplex.setOut(null); // Deshabilitamos el output.
 			// Setea el máx. número de threads.
@@ -114,7 +115,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 
 			// Exportación del modelo.
 			if (config.EXPORT_MODEL)
-				masterData.cplex.exportModel(config.EXPORT_MASTER_DIR + "master_" + this.getIterationCount() + ".lp");
+				masterData.cplex.exportModel("master_" + this.getIterationCount() + ".lp");
 			// masterData.cplex.exportModel("master_" + this.getIterationCount() + ".lp");
 			// Resolvemos el modelo.
 			if (!masterData.cplex.solve() || masterData.cplex.getStatus() != IloCplex.Status.Optimal) {
@@ -156,6 +157,10 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			for (int j = 0; j < dataModel.getGrafo().getVertices(); j++)
 				logger.debug("Dual vertexBelongsToOneTree v" + j + ":"
 						+ masterData.cplex.getDual(this.vertexBelongsToOneTree[j]));
+
+			logger.debug("Funcion objetivo " +  masterData.cplex.getObjValue());
+			for (IloNumVar var : vars)
+				logger.debug("Var " + var + "......" + masterData.cplex.getValue(var));
 
 			// Hacemos la cuenta del costo reducido para cada columna, para verificar.
 			// Todas tendrían que ser > 0
@@ -293,7 +298,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 	@Override
 	public void branchingDecisionReversed(BranchingDecision bd) {
 		// No hacemos nada en el master si backtrackeamos.
-		
+
 		MBTBranchingDecision decision = (MBTBranchingDecision) bd;
 		int origen = decision.getArista().getV1();
 		int destino = decision.getArista().getV2();
