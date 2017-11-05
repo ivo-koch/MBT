@@ -78,7 +78,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			// Creamos la variable h que representa esa columna.
 			h = cplex.numVar(iloColumn, 0, dataModel.getMaxT(), "h");
 			cplex.add(h);
-
+				
 			// y ahora creamos la segunda desigualdad, vacía
 			vertexBelongsToOneTree = new IloRange[dataModel.getGrafo().getVertices()];
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); i++)

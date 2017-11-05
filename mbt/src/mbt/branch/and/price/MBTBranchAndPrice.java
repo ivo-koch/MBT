@@ -1,8 +1,11 @@
 package mbt.branch.and.price;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
+import org.jorlib.demo.frameworks.columnGeneration.graphColoringBAP.cg.IndependentSet;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchAndPrice;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchCreator;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.BAPNode;
@@ -36,14 +39,18 @@ public final class MBTBranchAndPrice extends AbstractBranchAndPrice<DataModel, M
     @Override
     protected List<MBTColumn> generateInitialFeasibleSolution(BAPNode<DataModel, MBTColumn> node) {
         List<MBTColumn> artificialSolution=new ArrayList<>();
-                          
+                                               
         //y ahora hacemos BFS desde ese V0.
         Arbol bfs = dataModel.getGrafo().bfs(dataModel.getV0());
-               
-        for (int v: bfs.getHijos(bfs.getRoot()))          
-        	artificialSolution.add(new MBTColumn(pricingProblems.get(0), true, "generateInitialFeasibleSolution", Arbol.Builder.buildSubarbol(bfs, v)));
+                
+        for (int v: bfs.getHijos(bfs.getRoot())) {
+        	MBTColumn nueva = new MBTColumn(pricingProblems.get(0), false, "generateInitialFeasibleSolution", Arbol.Builder.buildSubarbol(bfs, v));        
+        	if (!node.getInitialColumns().contains(nueva))        
+        		artificialSolution.add(nueva);
+        }
         
         return artificialSolution;
+        
     }
 
     /**

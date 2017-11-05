@@ -47,7 +47,7 @@ public class MBTSolver {
 		// .singletonList(ExactPricingProblemSolverMultipleV0.class);
 
 		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = Collections
-				.singletonList(HeuristicPricingProblemSolver.class);
+				.singletonList(ExactPricingProblemSolverMultipleV0.class);
 
 		// Optional: Get an initial solution
 		List<MBTColumn> initSolution = this.getInitialSolution(dataModel, pricingProblem);
@@ -61,10 +61,10 @@ public class MBTSolver {
 
 		// Create a Branch-and-Price instance, and provide the initial solution as a
 		// warm-start
-		MBTBranchAndPrice bap = new MBTBranchAndPrice(dataModel, master, pricingProblem, solvers, branchCreators, 0,
-				dataModel.getGrafo().getVertices() - 1);
+		MBTBranchAndPrice bap = new MBTBranchAndPrice(dataModel, master, pricingProblem, solvers, branchCreators,
+				-(dataModel.getGrafo().getVertices() - 1), 0);
 
-		bap.warmStart(-costo, initSolution);
+		//bap.warmStart(-costo, initSolution);
 
 		// OPTIONAL: Attach a debugger
 		new SimpleDebugger(bap, true);
@@ -132,7 +132,7 @@ public class MBTSolver {
 
 		for (int v : bfs.getHijos(bfs.getRoot())) {
 			Arbol nuevo = Arbol.Builder.buildSubarbol(bfs, v);
-			solInicial.add(new MBTColumn(pricingProblem, true, "generateInitialFeasibleSolution", nuevo));
+			solInicial.add(new MBTColumn(pricingProblem, false, "generateInitialFeasibleSolution", nuevo));
 		}
 
 		return solInicial;
