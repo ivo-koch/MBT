@@ -197,7 +197,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			// comienza en un v0
 			if (dataModel.getV0().contains(column.getArbol().getRoot()))
 				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH.get(column.getArbol().getRoot()),
-						column.getArbol().calcularCosto()));
+						column.getArbol().calcularCosto() + dataModel.getOffset()[column.getArbol().getRoot()]));
 
 			// Registramos la columna con los segundos constraints, para los
 			// vértices que conforman a T
@@ -208,6 +208,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 					.and(masterData.cplex.column(this.vertexBelongsToOneTree[column.getArbol().getRoot()], 1.0));
 			// Creamos la variable
 			IloNumVar var = masterData.cplex.numVar(iloColumn, 0, Double.MAX_VALUE, "T_" + column);
+			logger.debug("Offset:_" + Arrays.toString(dataModel.getOffset()));
 			logger.debug("Agregando variable " + "T_" + column);
 			masterData.cplex.add(var);
 			masterData.addColumn(column, var);

@@ -24,7 +24,7 @@ public class MBTSolver {
 	public MBTSolver(Grafo grafo, Set<Integer> V0) {
 
 		Properties properties = new Properties();
-		properties.setProperty("EXPORT_MODEL", "false");
+		properties.setProperty("EXPORT_MODEL", "true");
 		Configuration.readFromFile(properties);
 
 		// el data model con los datos de V0 y el grafo
@@ -49,11 +49,11 @@ public class MBTSolver {
 		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = Collections
 				.singletonList(ExactPricingProblemSolverMultipleV0.class);
 
-		// Optional: Get an initial solution
-		List<MBTColumn> initSolution = this.getInitialSolution(dataModel, pricingProblem);
-		int costo = 0;
-		for (MBTColumn col : initSolution)
-			costo = Math.max(costo, col.getArbol().calcularCosto());
+//		// Optional: Get an initial solution
+//		List<MBTColumn> initSolution = this.getInitialSolution(dataModel, pricingProblem);
+//		int costo = 0;
+//		for (MBTColumn col : initSolution)
+//			costo = Math.max(costo, col.getArbol().calcularCosto());
 
 		// Define Branch creators
 		List<? extends AbstractBranchCreator<DataModel, MBTColumn, MBTPricingProblem>> branchCreators = Collections
