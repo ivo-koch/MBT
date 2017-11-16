@@ -218,6 +218,8 @@ public final class ExactPricingProblemSolverMultipleV0
 			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
 			cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
 
+			logger.debug("Resolviendo exacto...");
+			
 			if (config.EXPORT_MODEL)
 				cplex.exportModel("pricingProblem" + activacion + ".lp");
 			activacion++;

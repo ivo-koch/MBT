@@ -3,8 +3,11 @@ package mbt.branch.and.price;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -20,11 +23,15 @@ import util.GraphUtils;
 
 public class MBTSolver {
 
+	
 	// private final Grafo grafo;
+	
+	private MBTBranchAndPrice bap;
 	public MBTSolver(Grafo grafo, Set<Integer> V0) {
 
 		Properties properties = new Properties();
-		properties.setProperty("EXPORT_MODEL", "true");
+		properties.setProperty("EXPORT_MODEL", "false");
+		//properties.setProperty("MAXTHREADS", "5");
 		Configuration.readFromFile(properties);
 
 		// el data model con los datos de V0 y el grafo
@@ -46,8 +53,11 @@ public class MBTSolver {
 		// MBTPricingProblem>>> solvers = Collections
 		// .singletonList(ExactPricingProblemSolverMultipleV0.class);
 
-		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = Collections
-				.singletonList(ExactPricingProblemSolverMultipleV0.class);
+		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = new ArrayList<Class<? extends AbstractPricingProblemSolver<DataModel,MBTColumn,MBTPricingProblem>>>();
+			
+		solvers.add(HeuristicPricingProblemSolver.class);
+		solvers.add(ExactPricingProblemSolverMultipleV0.class);
+		//solvers.add(RoutingPricingSolver.class);
 
 //		// Optional: Get an initial solution
 //		List<MBTColumn> initSolution = this.getInitialSolution(dataModel, pricingProblem);
@@ -61,7 +71,7 @@ public class MBTSolver {
 
 		// Create a Branch-and-Price instance, and provide the initial solution as a
 		// warm-start
-		MBTBranchAndPrice bap = new MBTBranchAndPrice(dataModel, master, pricingProblem, solvers, branchCreators,
+		bap = new MBTBranchAndPrice(dataModel, master, pricingProblem, solvers, branchCreators,
 				-(dataModel.getGrafo().getVertices() - 1), 0);
 
 		//bap.warmStart(-costo, initSolution);
@@ -72,9 +82,12 @@ public class MBTSolver {
 		// OPTIONAL: Attach a logger to the Branch-and-Price procedure.
 		new SimpleBAPLogger(bap, new File("output.log"));
 
+	}
+	public MBTSolution solve() {
 		// Solve the Graph Coloring problem through Branch-and-Price
 		bap.runBranchAndPrice(System.currentTimeMillis() + 8000000L);
-		master.printSolution();
+		
+		//master.printSolution();
 		MBTSolution mbtSolution = new MBTSolution(bap.getObjective(), bap.getTotalNrIterations(),
 				bap.getNumberOfProcessedNodes(), bap.getMasterSolveTime(), bap.getPricingSolveTime(), bap.isOptimal(),
 				bap.getSolution());
@@ -84,7 +97,7 @@ public class MBTSolver {
 		// Clean up:
 		bap.close(); // Close master and pricing problems
 
-		// return mbtSolution;
+		return mbtSolution;
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -109,10 +122,11 @@ public class MBTSolver {
 		// V0.add(7);
 
 		// Grafo g = GraphUtils.loadFromTxt("./testInst/G_10_0.6");
-		Grafo g = GraphUtils.loadFromTxt("./testInst/G_10_0.6");
+		Grafo g = GraphUtils.loadFromTxt("./ok/G_10_0.6");
 
 		// GraphUtils.saveToTxt("Rand12_0.3", g);
-		new MBTSolver(g, V0);
+		MBTSolver mbt = new MBTSolver(g, V0);
+		mbt.solve();
 	}
 
 	// ------------------ Helper methods -----------------

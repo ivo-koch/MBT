@@ -14,7 +14,7 @@ public class TestBenchGenerator {
 		int cantAGenerar = 50;
 
 		double[] dens = { 0.2, 0.4, 0.6, 0.8 };
-		for (int i = 0; i < cantAGenerar; i++) {
+		for (int i = 6; i < cantAGenerar; i++) {
 			for (double d : dens) {
 				Grafo g = GraphGenerator.randomGraph(10 + i, d);
 //int upperBound = BColUpperBound.upperBound(g);

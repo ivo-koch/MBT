@@ -68,9 +68,9 @@ public class ModeloCompactoVsPricing {
 
 				MBTSolver modeloBranchAndPrice = new MBTSolver(g, V0);
 
-				//MBTSolution sol = modeloBranchAndPrice.solve();
+				MBTSolution sol = modeloBranchAndPrice.solve();
 
-				//assertEquals(modeloCompacto.getSolucion() + 1, sol.getObjective(), 0.0001);
+				assertEquals(modeloCompacto.getSolucion() + 1, -sol.getObjective(), 0.0001);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();

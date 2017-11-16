@@ -43,7 +43,9 @@ public final class HeuristicPricingProblemSolver
 	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {
 		List<MBTColumn> newPatterns = new ArrayList<>();
 
+		logger.debug("Resolviendo heuristica...");
 		int i = 0;
+		
 		for (int v0 : this.dataModel.getV0()) {
 
 			int n = this.dataModel.getGrafo().getVertices();
@@ -58,17 +60,21 @@ public final class HeuristicPricingProblemSolver
 			double sumaVertices = duals[dataModel.getV0().size() + v0];
 			boolean termine = false;
 			double mejorFuncionObjetivo = Double.MAX_VALUE;
+			
 			while (!termine) {
 				AristaDirigida candidata = null;
 			
 				for (AristaDirigida a : aristasIncidentesAT) {
 					// calculamos cuánto mejora la función objetivo.
-
+					
+					if (dataModel.getV0().contains(a.getV2()))
+						continue;
 					// cuánto costaría agregar a w?
 					int w = a.getV2();
 					// lo agregamos tentativamente a w, para calcular el costo.
 					T.addVertex(w, a.getV1());
-					double fObj = coeficienteDev0 * T.calcularCosto() + duals[dataModel.getV0().size() + w] + sumaVertices;
+					
+					double fObj = coeficienteDev0 * (T.calcularCosto() + dataModel.getOffset()[v0]) + sumaVertices + duals[dataModel.getV0().size() + w]; 
 
 					// encontramos una arista que mejora mi función objetivo
 					if (fObj < mejorFuncionObjetivo) {
@@ -80,7 +86,7 @@ public final class HeuristicPricingProblemSolver
 						// actualizamos la lista de aristas antes de iterar de nuevo, sino se calienta.
 						// y agrego sus aristas incidentes para procesar.
 						for (AristaDirigida b : this.dataModel.getGrafo().getAristasIncidentes(w))
-							if (!T.contains(b.getV2()))
+							if (!T.contains(b.getV2()) && !dataModel.getV0().contains(b.getV2()))
 								aristasIncidentesAT.add(b);
 						// y boleteamos las aristas que tengan a w como destino
 						Set<AristaDirigida> aEliminar = new HashSet<AristaDirigida>();
