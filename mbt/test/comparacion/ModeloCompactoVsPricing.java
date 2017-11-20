@@ -34,6 +34,8 @@ public class ModeloCompactoVsPricing {
 	@Test
 	public void testModelos() throws Exception {
 
+		MBTSolver.initConfig();
+		
 		Writer writer = new FileWriter("logGeneral");
 		// Writer writer = new BufferedWriter(new OutputStreamWriter(new
 		// FileOutputStream("./tester-logs/logGeneral"), "utf-8"));
@@ -47,7 +49,7 @@ public class ModeloCompactoVsPricing {
 			archivos.add(p);
 
 		Collections.sort(archivos);
-
+			
 		for (Path p : archivos) {
 
 			if (Files.isDirectory(p))
@@ -55,6 +57,7 @@ public class ModeloCompactoVsPricing {
 			// Iteramos por todos los archivos del directorio y resolvemos
 			String nombreGrafo = p.getFileName().toString();
 
+			System.out.println("Resolviendo " + nombreGrafo);
 			String fullPath =directory + FileSystems.getDefault().getSeparator() + nombreGrafo;
 			Grafo g = GraphUtils.loadFromTxt(fullPath);
 

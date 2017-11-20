@@ -27,12 +27,16 @@ public class MBTSolver {
 	// private final Grafo grafo;
 	
 	private MBTBranchAndPrice bap;
-	public MBTSolver(Grafo grafo, Set<Integer> V0) {
+	
+	public static void initConfig() {
 
 		Properties properties = new Properties();
 		properties.setProperty("EXPORT_MODEL", "false");
 		//properties.setProperty("MAXTHREADS", "5");
 		Configuration.readFromFile(properties);
+
+	}
+	public MBTSolver(Grafo grafo, Set<Integer> V0) {
 
 		// el data model con los datos de V0 y el grafo
 		DataModel dataModel = new DataModel(grafo, V0);

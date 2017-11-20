@@ -215,8 +215,8 @@ public final class ExactPricingProblemSolverMultipleV0
 		List<MBTColumn> newPatterns = new ArrayList<>();
 		try {
 			// Límite de tiempo.
-			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
-			cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
+//			double timeRemaining = Math.max(1, (timeLimit - System.currentTimeMillis()) / 1000.0);
+//			cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
 
 			logger.debug("Resolviendo exacto...");
 			
