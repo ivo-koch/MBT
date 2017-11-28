@@ -142,6 +142,12 @@ public class Arbol {
 		this.costo = costo;
 		this.valorFuncionObjetivo = valorFuncionObjetivo;
 	}
+	
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return new Arbol(this.vertices.clone(), this.root); 
+	}
+
 
 	/***
 	 * Implementación estándar de bfs. Devuelve los nodos en bfs a partir del
