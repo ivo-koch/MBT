@@ -16,7 +16,7 @@ public class Arbol {
 	private final int root;
 
 	/** t del árbol. **/
-	private final double costo;
+	private int costo;
 
 	/***
 	 * Nos guardamos por las dudas el valor de la función objetivo de cuando
@@ -76,7 +76,7 @@ public class Arbol {
 			return new Arbol(this.vertices, this.root);
 		}
 
-		public Arbol buildArbol(double costo, double valorFuncionObjetivo) {
+		public Arbol buildArbol(int costo, double valorFuncionObjetivo) {
 
 			return new Arbol(this.vertices, this.root, costo, valorFuncionObjetivo);
 		}
@@ -124,7 +124,7 @@ public class Arbol {
 
 		this.vertices = vertices;
 		this.root = root;
-		this.costo = calcularCosto();
+		recalcularCosto();
 		this.valorFuncionObjetivo = Double.MAX_VALUE;
 	}
 
@@ -135,7 +135,7 @@ public class Arbol {
 	 * @param root
 	 * @param costo
 	 */
-	private Arbol(int[] vertices, int root, double costo, double valorFuncionObjetivo) {
+	private Arbol(int[] vertices, int root, int costo, double valorFuncionObjetivo) {
 
 		this.vertices = vertices;
 		this.root = root;
@@ -143,9 +143,8 @@ public class Arbol {
 		this.valorFuncionObjetivo = valorFuncionObjetivo;
 	}
 	
-	@Override
-	protected Object clone() throws CloneNotSupportedException {
-		return new Arbol(this.vertices.clone(), this.root); 
+	public Arbol clonar()  {
+		return new Arbol(this.vertices.clone(), this.root, this.getCosto(), this.getValorFuncionObjetivo()); 
 	}
 
 
@@ -190,8 +189,11 @@ public class Arbol {
 	 * 
 	 * @return
 	 */
-	public int calcularCosto() {
+	public int getCosto() {
+		return this.costo;
+	}
 
+	public void recalcularCosto() {
 		int n = this.vertices.length;
 
 		int tV[] = new int[n];
@@ -216,7 +218,7 @@ public class Arbol {
 			}
 		}
 
-		return tV[root];
+		this.costo = tV[root];
 	}
 
 	public boolean contains(int v) {
@@ -236,6 +238,7 @@ public class Arbol {
 			throw new RuntimeException(v + "ya está en el árbol");
 
 		this.vertices[v] = parent;
+		recalcularCosto();
 	}
 	
 	public void removeVertex(int v) {
@@ -247,6 +250,7 @@ public class Arbol {
 			throw new RuntimeException(v + "tiene hijos en el árbol");
 
 		this.vertices[v] = -1;
+		recalcularCosto();
 	}
 	
 	/***
@@ -284,10 +288,6 @@ public class Arbol {
 		return root;
 	}
 
-	public double getCosto() {
-		return costo;
-	}
-	
 //	public void setCosto(double costo) {
 //		this.costo = costo;
 //	}
@@ -319,6 +319,12 @@ public class Arbol {
 
 	public double getValorFuncionObjetivo() {
 		return valorFuncionObjetivo;
+	}
+	
+	@Override
+	public String toString() 
+	{
+		return " set: " +this.getInternalNodes().toString() + " root: v" + this.getRoot() + " t : " + this.getCosto();
 	}
 
 }

@@ -50,7 +50,7 @@ public final class HeuristicPricingProblemSolver
 		for (int v : T.getInternalNodes())
 			sumaVertices += duals[dataModel.getV0().size() + v];
 
-		double fObj = coefT * (T.calcularCosto() + dataModel.getOffset()[T.getRoot()]) + sumaVertices;
+		double fObj = coefT * (T.getCosto() + dataModel.getOffset()[T.getRoot()]) + sumaVertices;
 
 		return fObj;
 	}

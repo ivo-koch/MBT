@@ -197,7 +197,7 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			// comienza en un v0
 			if (dataModel.getV0().contains(column.getArbol().getRoot()))
 				iloColumn = iloColumn.and(masterData.cplex.column(this.costLessThanH.get(column.getArbol().getRoot()),
-						column.getArbol().calcularCosto() + dataModel.getOffset()[column.getArbol().getRoot()]));
+						column.getArbol().getCosto() + dataModel.getOffset()[column.getArbol().getRoot()]));
 
 			// Registramos la columna con los segundos constraints, para los
 			// vértices que conforman a T

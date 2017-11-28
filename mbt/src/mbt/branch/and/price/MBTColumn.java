@@ -38,7 +38,7 @@ public final class MBTColumn extends AbstractColumn<DataModel, MBTPricingProblem
 	
 	@Override
 	public String toString() {
-		return " set: " +this.getArbol().getInternalNodes().toString() + " root: v" + this.getArbol().getRoot() + "t : " + this.getArbol().getCosto();
+		return this.getArbol().toString();
 	}
 
 	public Arbol getArbol() {

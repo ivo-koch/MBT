@@ -59,7 +59,8 @@ public class MBTSolver {
 
 		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = new ArrayList<Class<? extends AbstractPricingProblemSolver<DataModel,MBTColumn,MBTPricingProblem>>>();
 			
-		solvers.add(HeuristicPricingProblemSolver.class);
+//		solvers.add(HeuristicPricingProblemSolver.class);
+		solvers.add(HeuristicPricingProblemSolver2.class);
 		solvers.add(ExactPricingProblemSolverMultipleV0.class);
 		//solvers.add(RoutingPricingSolver.class);
 
