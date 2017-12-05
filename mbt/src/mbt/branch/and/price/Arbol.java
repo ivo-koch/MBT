@@ -327,4 +327,98 @@ public class Arbol {
 		return " set: " +this.getInternalNodes().toString() + " root: v" + this.getRoot() + " t : " + this.getCosto();
 	}
 
+	public boolean isArista(Integer u, Integer v) 
+	{
+		return this.parent(u) == v || this.parent(v) == u;
+	}
+
+	/**
+	 * Devuelve el único ciclo del arbol que se forma agregando la arista uv.
+	 * Precondición: la arista uv no está en el árbol
+	 * @param u
+	 * @param v
+	 * @return
+	 */
+	public List<Integer> getCiclo(Integer u, Integer v) 
+	{
+		List<Integer> cicloU = new ArrayList<Integer>();
+		
+		/*
+		 * Vamos desde u hasta la raíz. Si en algún momento nos 
+		 * encontramos con v, se cerró el ciclo.
+		 */
+		cicloU.add(u);
+		int p = this.parent(u);
+		while (p != this.getRoot())
+		{
+			cicloU.add(p);
+			if (p == v)
+				return cicloU;
+			
+			p = this.parent(p);
+		}
+		
+		
+		/*
+		 * Vamos desde v hasta la raíz. Si en algún momento nos 
+		 * encontramos con u, se cerró el ciclo. Si no, si nos 
+		 * encontramos con un vertice que esté en el camino de U, 
+		 * se cierra también descartando el resto del camino de U.
+		 * Si no, entonces el ciclo es ir de U hasta la raíz y bajar 
+		 * hasta V.   
+		 */
+		List<Integer> cicloV = new ArrayList<Integer>();
+		cicloV.add(v);
+		p = this.parent(v);
+		while (p != this.getRoot())
+		{
+			cicloV.add(p);
+			if (p == u)
+				return cicloV;
+			
+			if (cicloU.contains(p))
+			{
+				List<Integer> otra = cicloU.subList(0, cicloU.indexOf(p));
+				Collections.reverse(otra);
+				cicloV.addAll(otra);
+				return cicloV;
+			}
+			
+			p = this.parent(p);
+		}
+		
+		// Los dos llegaron hasta la raiz
+		
+		Collections.reverse(cicloU);
+		cicloU.remove(0); // borro la raíz porque está repetida
+		cicloV.addAll(cicloU);
+		return cicloV;
+	}
+
+	/**
+	 * Cambia el parent de un nodo u por v, siempre que u no sea un descendiente de v.
+	 * Devuelve true si hizo el camio.
+	 * @param u
+	 * @param v
+	 */
+	public boolean cambiarParent(Integer u, Integer v) 
+	{
+		int p = this.parent(v);
+		
+		while (p != this.getRoot())
+		{
+			if (p == u)
+				return false;
+			
+			p = this.parent(p);
+		}
+
+		if (p == u)
+			return false;
+
+		this.vertices[u] = v;
+		recalcularCosto();
+		return true;
+	}
+
 }

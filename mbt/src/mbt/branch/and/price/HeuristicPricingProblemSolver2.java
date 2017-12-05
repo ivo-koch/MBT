@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.javatuples.Pair;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.branchingDecisions.BranchingDecision;
 import org.jorlib.frameworks.columnGeneration.io.TimeLimitExceededException;
 import org.jorlib.frameworks.columnGeneration.pricing.AbstractPricingProblemSolver;
@@ -109,8 +107,8 @@ public final class HeuristicPricingProblemSolver2
 			double coeficienteDeV0 = duals[i++];
 
 			Arbol T = new Arbol(n, v0);
-			Arbol T_best = T.clonar();
-			double T_best_fobj = valorFuncionObjetivo(T, coeficienteDeV0);
+//			Arbol T_best = T.clonar();
+//			double T_best_fobj = valorFuncionObjetivo(T, coeficienteDeV0);
 			
 			HashMap<HashSet<Integer>, Arbol> candidatos = new HashMap<HashSet<Integer>, Arbol>();
 			
@@ -147,11 +145,17 @@ public final class HeuristicPricingProblemSolver2
 					actualizarAristas(aristasIncidentesAT, Collections.singletonList(a_best.getV2()), T);
 					
 					double T_fobj = valorFuncionObjetivo(T, coeficienteDeV0);
-					if (T_fobj < T_best_fobj)
+//					if (T_fobj < T_best_fobj)
+//					{
+//						T_best = T.clonar();
+//						T_best_fobj = T_fobj;
+//					}
+
+					if (T_fobj >= -config.PRECISION)
 					{
-						T_best = T.clonar();
-						T_best_fobj = T_fobj;
+						T_fobj = mejorarPorAristasComplemento(T, coeficienteDeV0);
 					}
+
 					
 					if (T_fobj < -config.PRECISION)
 					{
@@ -160,8 +164,7 @@ public final class HeuristicPricingProblemSolver2
 						
 						if (!candidatos.containsKey(set) || candidatos.get(set).getCosto() > T.getCosto())
 							candidatos.put(set, T.clonar());
-						
-					}	
+					}
 				}
 				else
 				{
@@ -169,7 +172,9 @@ public final class HeuristicPricingProblemSolver2
 				}
 			}
 
-			logger.debug("Agregando candidatos: ");
+			if (candidatos.size() > 0)
+				logger.debug("Agregando candidatos... ");
+
 			for (Arbol T_cand : candidatos.values())
 			{
 //				if (T_best_fobj < -config.PRECISION)
@@ -178,6 +183,69 @@ public final class HeuristicPricingProblemSolver2
 
 		}
 		return newPatterns;
+	}
+
+	/**
+	 * Procedimiento de mejora de un arbolito. Para cada arista no usada, si los 
+	 * extremos están en el árbol, agrega la arista e intenta cortar el ciclo de 
+	 * manera que mejore el T. Si no mejora, no la agrega. 
+	 * @param clonar
+	 * @param coeficienteDeV0 
+	 * @return 
+	 */
+	private double mejorarPorAristasComplemento(Arbol T, double coeficienteDeV0) 
+	{
+		List<Integer> nodos = T.bfs(T.getRoot());
+//		Collections.reverse(nodos);
+		double fobj = valorFuncionObjetivo(T, coeficienteDeV0);
+		
+//		logger.debug("--> Arbol: " + T);
+//		logger.debug("--> BFS: " + nodos);
+		
+		for (Integer u : nodos)
+			for (Integer v : nodos) if (u < v)
+			{
+				if (!T.isArista(u,v) && dataModel.getGrafo().isArista(u, v))
+				{
+//					logger.debug(">>> Probando arista " + u + " -- " + v);
+					double fobj1 = Double.MAX_VALUE;
+					int padre = T.parent(u);					
+					if (T.cambiarParent(u, v))
+					{
+//						logger.debug(">>>>> cambié el padre de " + u + " a " + v);
+						// Tengo el T1
+						fobj1 = valorFuncionObjetivo(T, coeficienteDeV0);
+						T.cambiarParent(u, padre);
+					}
+
+					padre = T.parent(v);
+					double fobj2 = Double.MAX_VALUE;
+					if (T.cambiarParent(v, u))
+					{
+//						logger.debug(">>>>> cambié el padre de " + v + " a " + u);
+						// Tengo el T2
+						fobj2 = valorFuncionObjetivo(T, coeficienteDeV0);
+						T.cambiarParent(v, padre);
+					}
+					
+					if (Math.min(fobj1, fobj2) < fobj)
+					{
+						logger.debug("**************** Mejoramos de " + fobj + " a " + Math.min(fobj1, fobj2));
+						if (fobj1 < fobj2)
+						{
+							fobj = fobj1;
+							T.cambiarParent(u, v);
+						}
+						else
+						{
+							fobj = fobj2;
+							T.cambiarParent(v, u);
+						}
+					}
+				}
+			}
+		
+		return fobj;
 	}
 
 	/**
