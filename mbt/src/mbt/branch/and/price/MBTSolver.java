@@ -59,8 +59,8 @@ public class MBTSolver {
 
 		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = new ArrayList<Class<? extends AbstractPricingProblemSolver<DataModel,MBTColumn,MBTPricingProblem>>>();
 			
-//		solvers.add(HeuristicPricingProblemSolver.class);
 		solvers.add(HeuristicPricingProblemSolver2.class);
+		solvers.add(HeuristicPricingProblemSolverMinDist.class);
 		solvers.add(ExactPricingProblemSolverMultipleV0.class);
 		//solvers.add(RoutingPricingSolver.class);
 
@@ -98,6 +98,8 @@ public class MBTSolver {
 				bap.getSolution());
 
 		mbtSolution.print();
+		
+		Estadisticas.print();
 
 		// Clean up:
 		bap.close(); // Close master and pricing problems

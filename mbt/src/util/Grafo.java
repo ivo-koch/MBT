@@ -111,6 +111,7 @@ public class Grafo {
 					this.setArista(i, j);
 
 	}
+		
 
 	public Arbol bfs(Set<Integer> V0) {
 

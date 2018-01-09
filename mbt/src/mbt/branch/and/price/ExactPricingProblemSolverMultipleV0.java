@@ -86,9 +86,12 @@ public final class ExactPricingProblemSolverMultipleV0
 			for (int i = 0; i < dataModel.getGrafo().getVertices(); ++i)
 				for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
 					if (i != j && dataModel.getGrafo().isArista(i, j)) {
-						int Ni = dataModel.getGrafo().getVecinos(i).size();
-						x[i][j] = new IloNumVar[Ni];
-						for (int k = 0; k < Ni; k++)
+						//TODO: Cambié esto, chequear con Diego por las dudas.
+						//int Ni = dataModel.getGrafo().getVecinos(i).size();
+						x[i][j] = new IloNumVar[dataModel.getGrafo().getVertices()];
+						//x[i][j] = new IloNumVar[Ni];
+						//for (int k = 0; k < Ni; k++)
+						for (int k = 0; k < dataModel.getGrafo().getVertices(); k++)
 							x[i][j][k] = cplex.boolVar("x[" + i + "," + j + "," + k + "]");
 					}
 
@@ -211,7 +214,7 @@ public final class ExactPricingProblemSolverMultipleV0
 	 *             TimeLimitExceededException
 	 */
 	@Override
-	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {
+	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {		
 		List<MBTColumn> newPatterns = new ArrayList<>();
 		try {
 			// Límite de tiempo.
@@ -219,6 +222,7 @@ public final class ExactPricingProblemSolverMultipleV0
 //			cplex.setParam(IloCplex.DoubleParam.TiLim, timeRemaining);
 
 			logger.debug("Resolviendo exacto...");
+			Estadisticas.llamadasExacto++;
 			
 			if (config.EXPORT_MODEL)
 				cplex.exportModel("pricingProblem" + activacion + ".lp");
@@ -274,6 +278,7 @@ public final class ExactPricingProblemSolverMultipleV0
 
 					MBTColumn columna = new MBTColumn(pricingProblem, false, this.getName(), builder.buildArbol());
 					newPatterns.add(columna);
+					Estadisticas.columnasExacto++;
 
 				}
 			}

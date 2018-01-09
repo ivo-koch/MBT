@@ -97,7 +97,8 @@ public final class HeuristicPricingProblemSolver2
 	public List<MBTColumn> generateNewColumns() throws TimeLimitExceededException {
 		List<MBTColumn> newPatterns = new ArrayList<>();
 
-		logger.debug("Resolviendo heuristica...");
+		logger.debug("Resolviendo heuristica greedy...");
+		Estadisticas.llamadasGreedy++;
 		int i = 0;
 
 		for (int v0 : this.dataModel.getV0()) {
@@ -179,15 +180,18 @@ public final class HeuristicPricingProblemSolver2
 			{
 //				if (T_best_fobj < -config.PRECISION)
 					newPatterns.add(new MBTColumn(pricingProblem, false, "HeuristicPricingProblemSolver", T_cand));
+					Estadisticas.columnasGreedy++;
 			}
 
 		}
+		if (!newPatterns.isEmpty())
+			Estadisticas.llamadasExitosasAGreedy++;
 		return newPatterns;
 	}
 
 	/**
 	 * Procedimiento de mejora de un arbolito. Para cada arista no usada, si los 
-	 * extremos están en el árbol, agrega la arista e intenta cortar el ciclo de 
+	 * extremos estï¿½n en el ï¿½rbol, agrega la arista e intenta cortar el ciclo de 
 	 * manera que mejore el T. Si no mejora, no la agrega. 
 	 * @param clonar
 	 * @param coeficienteDeV0 
@@ -212,7 +216,7 @@ public final class HeuristicPricingProblemSolver2
 					int padre = T.parent(u);					
 					if (T.cambiarParent(u, v))
 					{
-//						logger.debug(">>>>> cambié el padre de " + u + " a " + v);
+//						logger.debug(">>>>> cambiï¿½ el padre de " + u + " a " + v);
 						// Tengo el T1
 						fobj1 = valorFuncionObjetivo(T, coeficienteDeV0);
 						T.cambiarParent(u, padre);
@@ -222,7 +226,7 @@ public final class HeuristicPricingProblemSolver2
 					double fobj2 = Double.MAX_VALUE;
 					if (T.cambiarParent(v, u))
 					{
-//						logger.debug(">>>>> cambié el padre de " + v + " a " + u);
+//						logger.debug(">>>>> cambiï¿½ el padre de " + v + " a " + u);
 						// Tengo el T2
 						fobj2 = valorFuncionObjetivo(T, coeficienteDeV0);
 						T.cambiarParent(v, padre);

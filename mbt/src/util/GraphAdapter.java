@@ -4,8 +4,11 @@ import java.util.List;
 
 import org.jgrapht.Graphs;
 import org.jgrapht.UndirectedGraph;
+import org.jgrapht.WeightedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import org.jgrapht.graph.SimpleGraph;
+import org.jgrapht.graph.SimpleWeightedGraph;
 
 import util.Grafo.Builder;
 
@@ -51,6 +54,31 @@ public class GraphAdapter {
 			for (int k = j + 1; k < n; k++)
 				if (g.isArista(j, k))
 					graph.addEdge(j, k);
+
+		return graph;
+	}
+	
+	/**
+	 * Takes a graph in JGraphT format and converts it into a list of adjacencies.
+	 * 
+	 * @param graph
+	 * @return
+	 */
+	public static SimpleDirectedWeightedGraph<Integer, DefaultEdge> convertToWeighted(Grafo g) {
+
+		SimpleDirectedWeightedGraph<Integer, DefaultEdge> graph = new SimpleDirectedWeightedGraph<Integer, DefaultEdge>(DefaultEdge.class);
+
+		int n = g.getVertices();
+		for (int j = 0; j < n; j++)
+			graph.addVertex(j);
+
+		for (int j = 0; j < n; j++)
+			for (int k = j + 1; k < n; k++)
+				if (g.isArista(j, k))
+				{
+					graph.addEdge(j, k);
+					graph.addEdge(k, j);
+				}
 
 		return graph;
 	}

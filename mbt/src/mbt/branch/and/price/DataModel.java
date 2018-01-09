@@ -4,9 +4,13 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.jgrapht.WeightedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import org.jorlib.frameworks.columnGeneration.model.ModelInterface;
 
 import util.Grafo;
+import util.GraphAdapter;
 
 /***
  * Esta clase contiene información del problema, que se comparte entre el master
@@ -19,6 +23,8 @@ public class DataModel implements ModelInterface {
 
 	/*** El grafo ***/
 	private final Grafo grafo;
+	
+	private final SimpleDirectedWeightedGraph<Integer, DefaultEdge> grafoPesado;
 	
 	/*** El V0, que va a cambiar dinámicamente en el branching **/
 	private final Set<Integer> V0;
@@ -40,7 +46,8 @@ public class DataModel implements ModelInterface {
 		this.initialV0 = new TreeSet<Integer>(V0);
 		this.offset = new int[this.getGrafo().getVertices()];
 		this.maxT = g.getVertices() - 1;
-		this.M = Math.pow(g.getVertices(), 3);			
+		this.M = Math.pow(g.getVertices(), 3);	
+		this.grafoPesado = GraphAdapter.convertToWeighted(g);
 	}
 
 	@Override
@@ -70,6 +77,10 @@ public class DataModel implements ModelInterface {
 
 	public double getM() {
 		return M;
+	}
+
+	public SimpleDirectedWeightedGraph<Integer, DefaultEdge> getGrafoPesado() {
+		return grafoPesado;
 	}
 
 }
