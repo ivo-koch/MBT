@@ -10,7 +10,9 @@ public class Estadisticas {
 	public static int columnasDist = 0;
 	public static int llamadasExacto = 0;
 	public static int columnasExacto = 0;
-
+	public static long startTime = 0;
+	public static long stopTime = 0;
+	
 	public static void print()
 	{
 		System.out.println("Llamados heur. greedy: " + llamadasGreedy);
@@ -21,6 +23,7 @@ public class Estadisticas {
 		System.out.println("Columnas heur.dist: " + columnasDist);
 		System.out.println("Llamados exacto: " + llamadasExacto);
 		System.out.println("Columnas exacto: " + columnasExacto);
+		System.out.println("Tiempo: " + (stopTime - startTime));
 	}
 	
 	

@@ -333,8 +333,8 @@ public class Arbol {
 	}
 
 	/**
-	 * Devuelve el único ciclo del arbol que se forma agregando la arista uv.
-	 * Precondición: la arista uv no está en el árbol
+	 * Devuelve el ï¿½nico ciclo del arbol que se forma agregando la arista uv.
+	 * Precondiciï¿½n: la arista uv no estï¿½ en el ï¿½rbol
 	 * @param u
 	 * @param v
 	 * @return
@@ -344,8 +344,8 @@ public class Arbol {
 		List<Integer> cicloU = new ArrayList<Integer>();
 		
 		/*
-		 * Vamos desde u hasta la raíz. Si en algún momento nos 
-		 * encontramos con v, se cerró el ciclo.
+		 * Vamos desde u hasta la raï¿½z. Si en algï¿½n momento nos 
+		 * encontramos con v, se cerrï¿½ el ciclo.
 		 */
 		cicloU.add(u);
 		int p = this.parent(u);
@@ -360,11 +360,11 @@ public class Arbol {
 		
 		
 		/*
-		 * Vamos desde v hasta la raíz. Si en algún momento nos 
-		 * encontramos con u, se cerró el ciclo. Si no, si nos 
-		 * encontramos con un vertice que esté en el camino de U, 
-		 * se cierra también descartando el resto del camino de U.
-		 * Si no, entonces el ciclo es ir de U hasta la raíz y bajar 
+		 * Vamos desde v hasta la raï¿½z. Si en algï¿½n momento nos 
+		 * encontramos con u, se cerrï¿½ el ciclo. Si no, si nos 
+		 * encontramos con un vertice que estï¿½ en el camino de U, 
+		 * se cierra tambiï¿½n descartando el resto del camino de U.
+		 * Si no, entonces el ciclo es ir de U hasta la raï¿½z y bajar 
 		 * hasta V.   
 		 */
 		List<Integer> cicloV = new ArrayList<Integer>();
@@ -390,7 +390,7 @@ public class Arbol {
 		// Los dos llegaron hasta la raiz
 		
 		Collections.reverse(cicloU);
-		cicloU.remove(0); // borro la raíz porque está repetida
+		cicloU.remove(0); // borro la raï¿½z porque estï¿½ repetida
 		cicloV.addAll(cicloU);
 		return cicloV;
 	}
@@ -420,5 +420,51 @@ public class Arbol {
 		recalcularCosto();
 		return true;
 	}
+	/***
+	 * Agrega el camino indicado del Ã¡rbol. 
+	 * PrecondiciÃ³n: asumimos que la lista de vÃ©rtices tiene como Ãºltimo vÃ©rtice un 
+	 * elemento de T.
+	 * @param camino
+	 */
+	public void addPath(List<Integer> camino) {
+		int padre = camino.get(camino.size() - 1);
+		for (int j = camino.size() - 2; j >= 0; j--) {
+			int v = camino.get(j);
+			this.addVertex(v, padre);
+			padre = v;
+		}
+	}
+
+	/***
+	 * Elimina el camino indicado del Ã¡rbol.
+	 * PrecondiciÃ³n: El camino debe ser inducido.
+	 * @param camino
+	 */
+	public void removePath(List<Integer> camino) {
+		for (int j = 0; j < camino.size() - 1; j++)
+			this.removeVertex(camino.get(j));
+	}
+	
+	/***
+	 * Devuelve el valor de la funcion objetivo para el arbol T y el coeficiente
+	 * para t dado.
+	 * 
+	 * @param T
+	 * @param coefT
+	 * @return
+	 */
+	public double valorFuncionObjetivo(double coefT, double[] duals, DataModel dataModel) {
+		
+		double sumaVertices = duals[dataModel.getV0().size() + this.getRoot()];
+
+		for (int v : this.getInternalNodes())
+			sumaVertices += duals[dataModel.getV0().size() + v];
+
+		double fObj = coefT * (this.getCosto() + dataModel.getOffset()[this.getRoot()]) + sumaVertices;
+
+		return fObj;
+	}
+
+	
 
 }

@@ -31,7 +31,7 @@ public class MBTSolver {
 	public static void initConfig() {
 
 		Properties properties = new Properties();
-		properties.setProperty("EXPORT_MODEL", "false");
+		properties.setProperty("EXPORT_MODEL", "false");		
 		//properties.setProperty("MAXTHREADS", "5");
 		Configuration.readFromFile(properties);
 
@@ -91,7 +91,8 @@ public class MBTSolver {
 	public MBTSolution solve() {
 		// Solve the Graph Coloring problem through Branch-and-Price
 		bap.runBranchAndPrice(System.currentTimeMillis() + 8000000L);
-		
+		Estadisticas.stopTime = System.currentTimeMillis();
+
 		//master.printSolution();
 		MBTSolution mbtSolution = new MBTSolution(bap.getObjective(), bap.getTotalNrIterations(),
 				bap.getNumberOfProcessedNodes(), bap.getMasterSolveTime(), bap.getPricingSolveTime(), bap.isOptimal(),

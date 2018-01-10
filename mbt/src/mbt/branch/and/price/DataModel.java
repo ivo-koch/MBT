@@ -23,9 +23,7 @@ public class DataModel implements ModelInterface {
 
 	/*** El grafo ***/
 	private final Grafo grafo;
-	
-	private final SimpleDirectedWeightedGraph<Integer, DefaultEdge> grafoPesado;
-	
+
 	/*** El V0, que va a cambiar dinámicamente en el branching **/
 	private final Set<Integer> V0;
 	/*** El V0 inicial, no cambia nunca. **/
@@ -41,17 +39,36 @@ public class DataModel implements ModelInterface {
 
 	public DataModel(Grafo g, Set<Integer> V0) {
 		this.grafo = g;
-		//es un treeset porque quiero que me los devuelve siempre en el mismo orrden.
+		// es un treeset porque quiero que me los devuelve siempre en el mismo orrden.
 		this.V0 = new TreeSet<Integer>(V0);
 		this.initialV0 = new TreeSet<Integer>(V0);
 		this.offset = new int[this.getGrafo().getVertices()];
 		this.maxT = g.getVertices() - 1;
-		this.M = Math.pow(g.getVertices(), 3);	
-		this.grafoPesado = GraphAdapter.convertToWeighted(g);
+		this.M = Math.pow(g.getVertices(), 3);
+
+	}
+
+	public SimpleDirectedWeightedGraph<Integer, DefaultEdge> subgrafoSinVertices(Set<Integer> noIncluidos) {
+
+		SimpleDirectedWeightedGraph<Integer, DefaultEdge> subgrafo = new SimpleDirectedWeightedGraph<Integer, DefaultEdge>(
+				DefaultEdge.class);
+
+		for (int v = 0; v < grafo.getVertices(); v++)
+			if (!noIncluidos.contains(v))
+				subgrafo.addVertex(v);
+
+		for (Integer v: subgrafo.vertexSet())
+			for (Integer w: subgrafo.vertexSet())
+				if (v != w && grafo.isArista(v, w)) {
+					subgrafo.addEdge(v, w);
+					subgrafo.addEdge(w, v);
+				}
+
+		return subgrafo;
 	}
 
 	@Override
-	public String getName() {		
+	public String getName() {
 		return "";
 	}
 
@@ -77,10 +94,6 @@ public class DataModel implements ModelInterface {
 
 	public double getM() {
 		return M;
-	}
-
-	public SimpleDirectedWeightedGraph<Integer, DefaultEdge> getGrafoPesado() {
-		return grafoPesado;
-	}
+	}	
 
 }
