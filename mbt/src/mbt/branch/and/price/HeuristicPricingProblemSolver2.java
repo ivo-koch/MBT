@@ -34,27 +34,7 @@ public final class HeuristicPricingProblemSolver2
 		super(dataModel, pricingProblem);
 		this.name = "HeuristicPricingProblemSolver";
 	}
-	//
-	// /***
-	// * Devuelve el valor de la funcion objetivo para el arbol T y el coeficiente
-	// * para t dado.
-	// *
-	// * @param T
-	// * @param coefT
-	// * @return
-	// */
-	// private double valorFuncionObjetivo(Arbol T, double coefT) {
-	//
-	// double sumaVertices = duals[dataModel.getV0().size() + T.getRoot()];
-	//
-	// for (int v : T.getInternalNodes())
-	// sumaVertices += duals[dataModel.getV0().size() + v];
-	//
-	// double fObj = coefT * (T.getCosto() + dataModel.getOffset()[T.getRoot()]) +
-	// sumaVertices;
-	//
-	// return fObj;
-	// }
+
 
 	/**
 	 * Actualiza el conjunto de aristas incidentes al árbol, realizando las

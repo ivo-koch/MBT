@@ -50,6 +50,7 @@ public final class HeuristicPricingProblemSolverMinDist
 		for (DefaultEdge e : grafo.edgeSet()) {
 			int v = grafo.getEdgeTarget(e);
 			grafo.setEdgeWeight(e, coeficienteDeV0 + duals[dataModel.getV0().size() + v] + Math.abs(minWeight));
+			//grafo.setEdgeWeight(e, 1);
 		}
 	}
 

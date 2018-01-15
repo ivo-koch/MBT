@@ -1,5 +1,6 @@
 package mbt.branch.and.price;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -244,7 +245,7 @@ public final class ExactPricingProblemSolverMultipleV0
 				logger.debug("Pricing resuelto");
 				this.pricingProblemInfeasible = false;
 				this.objective = cplex.getObjValue();
-
+				
 				// podemos agregar el resultado a la base?
 				if (objective < -config.PRECISION) { // - config.PRECISION) {
 					// SI
