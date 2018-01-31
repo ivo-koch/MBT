@@ -15,16 +15,16 @@
 	<classpathentry kind="lib" path="logback-classic-0.9.28.jar"/>
 	<classpathentry kind="lib" path="logback-core-0.9.28.jar"/>
 	<classpathentry kind="lib" path="slf4j.api-1.6.1.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgraphx-2.0.0.1.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgrapht-io-1.1.0-uber.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgrapht-io-1.1.0.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgrapht-ext-1.1.0-uber.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgrapht-ext-1.1.0.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgrapht-demo-1.1.0.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgrapht-core-1.1.0.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/jgraph-5.13.0.0.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/commons-lang3-3.5.jar"/>
-	<classpathentry kind="lib" path="D:/DiegoDD/I+D/MBT2/mbt/antlr4-runtime-4.6.jar"/>
+	<classpathentry kind="lib" path="jgraphx-2.0.0.1.jar"/>
+	<classpathentry kind="lib" path="jgrapht-io-1.1.0-uber.jar"/>
+	<classpathentry kind="lib" path="jgrapht-io-1.1.0.jar"/>
+	<classpathentry kind="lib" path="jgrapht-ext-1.1.0-uber.jar"/>
+	<classpathentry kind="lib" path="jgrapht-ext-1.1.0.jar"/>
+	<classpathentry kind="lib" path="jgrapht-demo-1.1.0.jar"/>
+	<classpathentry kind="lib" path="jgrapht-core-1.1.0.jar"/>
+	<classpathentry kind="lib" path="jgraph-5.13.0.0.jar"/>
+	<classpathentry kind="lib" path="commons-lang3-3.5.jar"/>
+	<classpathentry kind="lib" path="antlr4-runtime-4.6.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
