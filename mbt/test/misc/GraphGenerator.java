@@ -1,4 +1,4 @@
-package aux;
+package misc;
 
 import java.util.Random;
 
