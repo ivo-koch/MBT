@@ -38,37 +38,6 @@ public final class BackTrackingPricingProblemSolver
 
 
 	/**
-	 * Actualiza el conjunto de aristas incidentes al árbol, realizando las
-	 * siguientes acciones: a.- Agrega a aristasIncidentesAT todas las aristas
-	 * incidentes a alguno de los vértices del camino b.- Elimina de
-	 * aristasIncidentesAT todas las aristas incidentes a alguno de los vértices del
-	 * camino PRECONDICION: camino debe ser un camino contenido en T
-	 * 
-	 * @param aristasIncidentesAT
-	 * @param camino
-	 * @param T
-	 */
-	private void actualizarAristas(Set<AristaDirigida> aristasIncidentesAT, List<Integer> camino, Arbol T) {
-
-		// actualizamos la lista de aristas antes de iterar de nuevo, sino se calienta.
-		// y agrego sus aristas incidentes para procesar.
-
-		for (int w : camino) {
-
-			for (AristaDirigida b : this.dataModel.getGrafo().getAristasIncidentes(w))
-				if (!T.contains(b.getV2()) && !dataModel.getV0().contains(b.getV2()))
-					aristasIncidentesAT.add(b);
-			// y boleteamos las aristas que tengan a w como destino
-			Set<AristaDirigida> aEliminar = new HashSet<AristaDirigida>();
-			for (AristaDirigida c : aristasIncidentesAT)
-				if (c.getV2() == w && !(T.parent(w) == c.getV1()))
-					aEliminar.add(c);
-
-			aristasIncidentesAT.removeAll(aEliminar);
-		}
-	}
-
-	/**
 	 * Método principal que resuelve el problema de pricing.
 	 * 
 	 * @return List of columns (independent sets) with negative reduced cost.
@@ -91,7 +60,10 @@ public final class BackTrackingPricingProblemSolver
 			
 			if (continuarArbol(T, candidatas, coeficienteDeV0))
 			{
-				logger.debug("Agregando columna desde v�rtice " + v0);
+				logger.debug("Agregando columna desde v" + v0 + " (obj: " + 
+						T.valorFuncionObjetivo(coeficienteDeV0, duals, dataModel) + ")");
+				
+				
 				newPatterns.add(new MBTColumn(pricingProblem, false, "BacktrackingPricingProblemSolver", T));
 				Estadisticas.columnasBacktracking++;
 			}
@@ -111,7 +83,7 @@ public final class BackTrackingPricingProblemSolver
 		LinkedList<Arista> ret = new LinkedList<Arista>();
 		for (int w : dataModel.getGrafo().getVecinos(v))
 		{
-			if (!T.contains(w))
+			if (!T.contains(w) && !dataModel.getV0().contains(w))
 				ret.add(new Arista(v, w));
 		}
 		
