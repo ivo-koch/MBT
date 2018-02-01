@@ -147,20 +147,20 @@ public final class MBTMaster extends AbstractMaster<DataModel, MBTColumn, MBTPri
 			int i = 0;
 			for (int v0 : this.costLessThanH.keySet()) {
 				costLessThanHEnOrdInsercion[i++] = this.costLessThanH.get(v0);
-				logger.debug("Dual costLessThanH v" + v0 + ":" + masterData.cplex.getDual(this.costLessThanH.get(v0)));
+//				logger.debug("Dual costLessThanH v" + v0 + ":" + masterData.cplex.getDual(this.costLessThanH.get(v0)));
 			}
 
 			double[] dualValuesRest1 = masterData.cplex.getDuals(costLessThanHEnOrdInsercion);
 			// Duales para la segunda restricción.
 			double[] dualValuesRest2 = masterData.cplex.getDuals(this.vertexBelongsToOneTree);
 
-			for (int j = 0; j < dataModel.getGrafo().getVertices(); j++)
-				logger.debug("Dual vertexBelongsToOneTree v" + j + ":"
-						+ masterData.cplex.getDual(this.vertexBelongsToOneTree[j]));
+//			for (int j = 0; j < dataModel.getGrafo().getVertices(); j++)
+//				logger.debug("Dual vertexBelongsToOneTree v" + j + ":"
+//						+ masterData.cplex.getDual(this.vertexBelongsToOneTree[j]));
 
-			logger.debug("Funcion objetivo " +  masterData.cplex.getObjValue());
-			for (IloNumVar var : vars)
-				logger.debug("Var " + var + "......" + masterData.cplex.getValue(var));
+//			logger.debug("Funcion objetivo " +  masterData.cplex.getObjValue());
+//			for (IloNumVar var : vars)
+//				logger.debug("Var " + var + "......" + masterData.cplex.getValue(var));
 
 			// Hacemos la cuenta del costo reducido para cada columna, para verificar.
 			// Todas tendrían que ser > 0

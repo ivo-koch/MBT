@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 import org.javatuples.Pair;
@@ -50,15 +52,21 @@ public final class BackTrackingPricingProblemSolver
 
 		logger.debug("Resolviendo backtracking...");
 		Estadisticas.llamadasBacktracking++;
+		
+		double fullProfit = 0.0;		
+		for (int j = 0; j < dataModel.getGrafo().getVertices(); ++j)
+			fullProfit += profit(j);
+		
 		int i = 0;
 		int n = this.dataModel.getGrafo().getVertices();
 
-		for (int v0 : this.dataModel.getV0()) {
+		for (int v0 : this.dataModel.getV0()) 
+		{
 			double coeficienteDeV0 = duals[i++];
 			Arbol T = new Arbol(n, v0);
-			LinkedList<Arista> candidatas = aristasSalientes(T, v0);
+			Candidatas candidatas = aristasSalientes(T, v0);			
 			
-			if (continuarArbol(T, candidatas, coeficienteDeV0))
+			if (continuarArbol(T, candidatas, coeficienteDeV0, fullProfit - profit(v0)))
 			{
 				logger.debug("Agregando columna desde v" + v0 + " (obj: " + 
 						T.valorFuncionObjetivo(coeficienteDeV0, duals, dataModel) + ")");
@@ -66,25 +74,33 @@ public final class BackTrackingPricingProblemSolver
 				
 				newPatterns.add(new MBTColumn(pricingProblem, false, "BacktrackingPricingProblemSolver", T));
 				Estadisticas.columnasBacktracking++;
+				
+				// TODO: Ver si conviene cortar acá o no..
+				break;
 			}
 		}
 
 		return newPatterns;
 	}
 
+	private double profit(int v) 
+	{
+		return duals[dataModel.getV0().size() + v];
+	}
+	
 	/**
 	 * Arma el conjunto con las posibles aristas a agregar a partir de un vértice del árbol 
 	 * @param T
 	 * @param v
 	 * @return
 	 */
-	private LinkedList<Arista> aristasSalientes(Arbol T, int v) 
+	private Candidatas aristasSalientes(Arbol T, int v) 
 	{
-		LinkedList<Arista> ret = new LinkedList<Arista>();
+		Candidatas ret = new Candidatas(duals);
 		for (int w : dataModel.getGrafo().getVecinos(v))
 		{
 			if (!T.contains(w) && !dataModel.getV0().contains(w))
-				ret.add(new Arista(v, w));
+				ret.agregar(new Arista(v, w));
 		}
 		
 		return ret;
@@ -96,16 +112,48 @@ public final class BackTrackingPricingProblemSolver
 	 * @param T
 	 * @param candidatas
 	 * @param coefV0
+	 * @param profitRestante 
 	 * @return
 	 */
-	private boolean continuarArbol(Arbol T, LinkedList<Arista> candidatas, double coefV0) 
+	private boolean continuarArbol(Arbol T, Candidatas candidatas, double coefV0, double profitRestante) 
 	{
 		if (columnaValida(T, coefV0))
 			return true;
 		
+		// TODO: Agregar más podas 
+		
+		// Poda 1: Si con los candidatos que quedan no llegamos, ya fue
+		if (T.valorFuncionObjetivo(coefV0, duals, dataModel) + profitRestante > 0)
+			return false;
+		
 		// Tomo la primera de las candidatas que no esté ya en el arbol y la saco de la lista
+		Arista uv = proximaArista(T, candidatas);
+		if (uv == null) // no encontré candidata
+			return false;
+
+		
+		// Pruebo a ver si encuentro algo agregando el nuevo vértice		
+		int viejo = uv.u;
+		int nuevo = uv.v;
+		T.addVertex(nuevo, viejo);
+		Candidatas vecinosNuevos = aristasSalientes(T, nuevo);
+		Candidatas nuevasCandidatas = agregarCandidatas(candidatas, vecinosNuevos);
+		if (continuarArbol(T, nuevasCandidatas, coefV0, profitRestante - profit(nuevo)))
+			return true;
+
+		// Si no sirvió agregar esa arista, sigo probando con las demás candidatas
+		T.removeVertex(nuevo);
+		if (continuarArbol(T, candidatas, coefV0, profitRestante))
+			return true;
+
+		return false;
+	}
+
+
+	private Arista proximaArista(Arbol T, Candidatas candidatas) 
+	{
 		Arista uv = null;
-		while (!candidatas.isEmpty())
+		while (!candidatas.vacia())
 		{
 			Arista a = candidatas.pop();
 			
@@ -115,26 +163,7 @@ public final class BackTrackingPricingProblemSolver
 				break;
 			}
 		}
-			
-		if (uv == null) // no encontré candidata
-			return false;
-
-		
-		// Pruebo a ver si encuentro algo agregando el nuevo vértice		
-		int viejo = uv.u;
-		int nuevo = uv.v;
-		T.addVertex(nuevo, viejo);
-		LinkedList<Arista> vecinosNuevos = aristasSalientes(T, nuevo);
-		LinkedList<Arista> nuevasCandidatas = agregarCandidatas(candidatas, vecinosNuevos);
-		if (continuarArbol(T, nuevasCandidatas, coefV0))
-			return true;
-
-		// Si no sirvió agregar esa arista, sigo probando con las demás candidatas
-		T.removeVertex(nuevo);
-		if (continuarArbol(T, candidatas, coefV0))
-			return true;
-
-		return false;
+		return uv;
 	}
 
 
@@ -157,11 +186,10 @@ public final class BackTrackingPricingProblemSolver
 	 * @param vecinosNuevos
 	 * @return
 	 */
-	private LinkedList<Arista> agregarCandidatas(LinkedList<Arista> candidatas, LinkedList<Arista> vecinosNuevos) 
+	private Candidatas agregarCandidatas(Candidatas candidatas, Candidatas vecinosNuevos) 
 	{
-		// TODO: Insertar en orden según profit o lo que sea
-		LinkedList<Arista> ret = new LinkedList<Arista>(candidatas);
-		ret.addAll(vecinosNuevos);
+		Candidatas ret = new Candidatas(candidatas);
+		ret.agregarTodas(vecinosNuevos);
 		return ret;
 	}
 
@@ -223,6 +251,113 @@ public final class BackTrackingPricingProblemSolver
 		{
 			this.u = u;
 			this.v = v;
+		}
+	}
+	
+	class Candidatas 
+	{
+		private LinkedList<Arista> aristas;
+		private double[] duals = null;
+		static final boolean ORDENAR = true;
+
+		
+		public Candidatas(double[] duals) 
+		{
+			aristas = new LinkedList<Arista>();
+			this.duals = duals;
+		}
+
+		public Candidatas(Candidatas candidatas) 
+		{
+			aristas = new LinkedList<Arista>(candidatas.aristas);
+			duals = candidatas.duals;
+		}
+
+		public void agregar(Arista arista) 
+		{			
+			if (ORDENAR)
+				agregarDespuesDe(arista, aristas.listIterator());
+			else
+				aristas.addLast(arista);
+		}
+
+		private void agregarDespuesDe(Arista arista, ListIterator<Arista> iter) 
+		{
+			double prof = profit(arista.v);
+			while (iter.hasNext())
+			{
+				// Note: más chico es mejor!
+				if (prof < profit(iter.next().v))
+				{
+					iter.previous(); // Lo avancé para consultarle... :-(
+					iter.add(arista);
+					break;
+				}
+			}
+
+			if (!iter.hasNext()) // No lo agregué... va al final
+				aristas.addLast(arista);
+		}
+
+		public boolean vacia() 
+		{
+			return aristas.isEmpty();
+		}
+
+		public Arista pop() 
+		{
+			Arista a = aristas.pop();
+			return a;
+		}
+
+		private double profit(int v) 
+		{
+			return duals[dataModel.getV0().size() + v];
+		}
+
+		public void agregarTodas(Candidatas cand) 
+		{
+			if (ORDENAR)
+			{
+				// Hago el siguiente HORROR para que el agregado de todas sea 
+				// en tiempo lineal (aprovechando el orden)
+				
+				LinkedList<Arista> nuevas = new LinkedList<Arista>();			
+				ListIterator<Arista> iter1 = aristas.listIterator();
+				ListIterator<Arista> iter2 = cand.aristas.listIterator();
+				while (iter1.hasNext() && iter2.hasNext())
+				{
+					Arista a1 = iter1.next();
+					Arista a2 = iter2.next();
+	
+					if (profit(a1.v) < profit(a2.v))
+					{
+						nuevas.addLast(a1);
+						iter2.previous(); // lo retrocedo poque no lo usé
+					}
+					else
+					{
+						nuevas.addLast(a2);
+						iter1.previous(); // lo retrocedo poque no lo usé
+					}
+				}
+				
+				while (iter1.hasNext())
+				{
+					nuevas.addLast(iter1.next());
+				}
+				
+				while (iter2.hasNext())
+				{
+					nuevas.addLast(iter2.next());
+				}
+	
+				aristas = nuevas;
+			}
+			else
+			{
+				aristas.addAll(cand.aristas);
+			}
 		}
 	}
 

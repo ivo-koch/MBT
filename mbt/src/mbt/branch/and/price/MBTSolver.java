@@ -60,7 +60,7 @@ public class MBTSolver {
 		List<Class<? extends AbstractPricingProblemSolver<DataModel, MBTColumn, MBTPricingProblem>>> solvers = new ArrayList<Class<? extends AbstractPricingProblemSolver<DataModel,MBTColumn,MBTPricingProblem>>>();
 			
 		solvers.add(HeuristicPricingProblemSolver2.class);
-		solvers.add(HeuristicPricingProblemSolverMinDist.class);
+//		solvers.add(HeuristicPricingProblemSolverMinDist.class);
 //		solvers.add(ExactPricingProblemSolverMultipleV0.class);
 		solvers.add(BackTrackingPricingProblemSolver.class);
 		//solvers.add(RoutingPricingSolver.class);
@@ -87,7 +87,6 @@ public class MBTSolver {
 
 		// OPTIONAL: Attach a logger to the Branch-and-Price procedure.
 		new SimpleBAPLogger(bap, new File("output.log"));
-
 	}
 	public MBTSolution solve() {
 		// Solve the Graph Coloring problem through Branch-and-Price

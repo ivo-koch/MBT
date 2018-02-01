@@ -145,28 +145,28 @@ public final class HeuristicPricingProblemSolver2
 				}
 			}
 
-			if (candidatos.size() > 0)
-				logger.debug("Agregando candidatos... ");
-			else {
-				// intentamos mejorar con variante de distancia
-				double T_fobj = T.valorFuncionObjetivo(coeficienteDeV0, duals, dataModel);
-
-				MejorarArbolPorDistancia hpd = new MejorarArbolPorDistancia(dataModel, duals, config.PRECISION, T);
-				Pair<Arbol, Double> resultado = hpd.mejorarArbol();
-				double nuevaFObj = resultado.getValue1();
-				Arbol nuevoT = resultado.getValue0();
-				if (nuevaFObj < T_fobj) {
-					logger.debug("**************** Mejoramos con dist de " + T_fobj + " a " + nuevaFObj);
-
-					if (T_fobj < -config.PRECISION) {
-						HashSet<Integer> set = new HashSet<Integer>(nuevoT.getInternalNodes());
-						set.add(nuevoT.getRoot());
-
-						if (!candidatos.containsKey(set) || candidatos.get(set).getCosto() > nuevoT.getCosto())
-							candidatos.put(set, nuevoT);
-					}
-				}
-			}
+//			if (candidatos.size() > 0)
+//				logger.debug("Agregando candidatos... ");
+//			else {
+//				// intentamos mejorar con variante de distancia
+//				double T_fobj = T.valorFuncionObjetivo(coeficienteDeV0, duals, dataModel);
+//
+//				MejorarArbolPorDistancia hpd = new MejorarArbolPorDistancia(dataModel, duals, config.PRECISION, T);
+//				Pair<Arbol, Double> resultado = hpd.mejorarArbol();
+//				double nuevaFObj = resultado.getValue1();
+//				Arbol nuevoT = resultado.getValue0();
+//				if (nuevaFObj < T_fobj) {
+//					logger.debug("**************** Mejoramos con dist de " + T_fobj + " a " + nuevaFObj);
+//
+//					if (T_fobj < -config.PRECISION) {
+//						HashSet<Integer> set = new HashSet<Integer>(nuevoT.getInternalNodes());
+//						set.add(nuevoT.getRoot());
+//
+//						if (!candidatos.containsKey(set) || candidatos.get(set).getCosto() > nuevoT.getCosto())
+//							candidatos.put(set, nuevoT);
+//					}
+//				}
+//			}
 
 			for (Arbol T_cand : candidatos.values()) {
 				// if (T_best_fobj < -config.PRECISION)
