@@ -61,7 +61,8 @@ public class MBTSolver {
 			
 		solvers.add(HeuristicPricingProblemSolver2.class);
 		solvers.add(HeuristicPricingProblemSolverMinDist.class);
-		solvers.add(ExactPricingProblemSolverMultipleV0.class);
+//		solvers.add(ExactPricingProblemSolverMultipleV0.class);
+		solvers.add(BackTrackingPricingProblemSolver.class);
 		//solvers.add(RoutingPricingSolver.class);
 
 //		// Optional: Get an initial solution
