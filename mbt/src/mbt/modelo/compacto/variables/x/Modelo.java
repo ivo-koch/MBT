@@ -27,7 +27,7 @@ public class Modelo {
 	private long[] solucion;
 
 	private long sol;
-	
+
 	private long tiempoEjecucion;
 
 	public Modelo(Grafo g, Set<Integer> V0) {
@@ -142,7 +142,6 @@ public class Modelo {
 
 		// restricción (4)
 		for (int i = 0; i < g.getVertices(); ++i) {
-
 			IloNumExpr lhs = cplex.linearIntExpr();
 			for (int t = 0; t < maxT; t++)
 				lhs = cplex.sum(lhs, cplex.prod(1.0, y[i][t]));
@@ -152,18 +151,21 @@ public class Modelo {
 
 		// restricción (5)
 		for (int i = 0; i < g.getVertices(); ++i) {
-			for (int t = 0; t < maxT; t++) {
-				IloNumExpr lhs = cplex.linearIntExpr();
+			//no usamos esta restricción si tengo un vértice de v0 aislado 
+			if (!V0.contains(i) || g.getVecinos(i).size() > 1) {
+				for (int t = 0; t < maxT; t++) {
+					IloNumExpr lhs = cplex.linearIntExpr();
 
-				lhs = cplex.sum(lhs, cplex.prod(1.0, y[i][t]));
+					lhs = cplex.sum(lhs, cplex.prod(1.0, y[i][t]));
 
-				for (int w : g.getVecinos(i))
-					if (i < w)
-						lhs = cplex.sum(lhs, cplex.prod(-1.0, x[i][w][t]));
-					else
-						lhs = cplex.sum(lhs, cplex.prod(-1.0, x[w][i][t]));
+					for (int w : g.getVecinos(i))
+						if (i < w)
+							lhs = cplex.sum(lhs, cplex.prod(-1.0, x[i][w][t]));
+						else
+							lhs = cplex.sum(lhs, cplex.prod(-1.0, x[w][i][t]));
 
-				restricciones.add(cplex.addLe(lhs, 0));
+					restricciones.add(cplex.addLe(lhs, 0));
+				}
 			}
 		}
 
@@ -274,7 +276,6 @@ public class Modelo {
 			// if (cplex.getValue(this.w[t]) > 0.99) {
 			System.out.println("t = " + cplex.getValue(this.w[0]));
 			sol = Math.round(cplex.getValue(this.w[0]));
-		
 
 		}
 	}
@@ -294,9 +295,9 @@ public class Modelo {
 	public long getSolucion() {
 		return sol;
 	}
-	
+
 	public long getTiempoEjecucion() {
 		return tiempoEjecucion;
 	}
-	
+
 }
