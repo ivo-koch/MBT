@@ -194,7 +194,11 @@ public class Grafo {
 		throw new RuntimeException("La arista no existe");
 	}
 
-	public List<AristaDirigida> getAristasIncidentes(int v) {
+	public List<AristaDirigida> getAristasIncidentes(int v) 
+	{
+		if (!verticesConAristas.containsKey(v))
+			verticesConAristas.put(v, new ArrayList<AristaDirigida>());
+
 		return verticesConAristas.get(v);
 	}
 

@@ -68,13 +68,13 @@ public class ModeloCompactoVsPricing {
 				Set<Integer> V0 = GraphUtils.leerV0(fullPath);
 				
 				Modelo modeloCompacto = new Modelo(g, V0);
-//				modeloCompacto.solve(new ByteArrayOutputStream());
+				modeloCompacto.solve(new ByteArrayOutputStream());
 				
 				MBTSolver modeloBranchAndPrice = new MBTSolver(g, V0);
 				Estadisticas.startTime = System.currentTimeMillis();
 				MBTSolution sol = modeloBranchAndPrice.solve();
 				
-//				assertEquals(modeloCompacto.getSolucion() + 1, -sol.getObjective(), 0.0001);
+				assertEquals(modeloCompacto.getSolucion() + 1, -sol.getObjective(), 0.0001);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();

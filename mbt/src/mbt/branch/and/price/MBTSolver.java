@@ -87,6 +87,8 @@ public class MBTSolver {
 
 		// OPTIONAL: Attach a logger to the Branch-and-Price procedure.
 		new SimpleBAPLogger(bap, new File("output.log"));
+		
+		//Logger.setLevel(Logger.ERROR); ME FALTA UN IMPORT PERO NO SE CUAL... :-(
 	}
 	public MBTSolution solve() {
 		// Solve the Graph Coloring problem through Branch-and-Price
